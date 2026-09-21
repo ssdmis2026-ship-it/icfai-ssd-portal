@@ -15,6 +15,7 @@
       --accent: #2b6cb0;
       --crimson: #dc2626;
       --amber: #d97706;
+      --green: #16a34a;
     }
     body {
       background: var(--bg);
@@ -33,7 +34,7 @@
       align-items: flex-start;
       gap: 30px;
       width: 100%;
-      max-width: 1050px;
+      max-width: 1120px;
       margin: auto;
     }
     @media (max-width: 900px) {
@@ -45,11 +46,12 @@
       box-shadow: 12px 12px 24px var(--shadow-dark), -12px -12px 24px var(--shadow-light);
       padding: 35px;
       width: 100%;
-      max-width: 560px;
+      max-width: 600px;
       box-sizing: border-box;
     }
     .header { text-align: center; margin-bottom: 20px; }
     .header img { max-height: 52px; margin-bottom: 10px; }
+    
     .tab-container {
       display: flex;
       background: var(--bg);
@@ -62,9 +64,10 @@
       flex: 1;
       border: none;
       background: transparent;
-      padding: 12px;
+      padding: 10px;
       border-radius: 12px;
       font-weight: 700;
+      font-size: 13px;
       color: #64748b;
       cursor: pointer;
       transition: all 0.2s ease;
@@ -106,6 +109,32 @@
     .grid-2 { display: flex; gap: 12px; }
     .grid-2 > div { flex: 1; }
 
+    /* Live Staff Status Bar */
+    .status-ticker {
+      background: var(--bg);
+      border-radius: 16px;
+      padding: 12px 16px;
+      box-shadow: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .status-pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .pill-avail { background: #dcfce7; color: var(--green); }
+    .pill-break { background: #fef3c7; color: var(--amber); }
+    .pill-leave { background: #fee2e2; color: var(--crimson); }
+
+    /* Side Announcement Container */
     #sideNoticeContainer {
       display: none;
       width: 100%;
@@ -134,17 +163,13 @@
     }
     .status-alert-box {
       display: none;
-      background: #fef2f2;
-      border: 1px solid #fecaca;
       border-radius: 12px;
       padding: 12px 14px;
       margin-bottom: 16px;
       font-size: 13px;
       line-height: 1.4;
-      color: #991b1b;
     }
 
-    /* Kiosk Security Gate Modal */
     #kioskGateOverlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -191,12 +216,19 @@
       <p style="color:#64748b; font-size: 13px; margin:0;">Visitor Enquiry & Check-in Desk</p>
     </div>
 
+    <!-- Live Continuous Desk Availability Display -->
+    <div style="font-size:11px; font-weight:700; color:#64748b; margin-bottom:6px;">LIVE STAFF STATUS:</div>
+    <div class="status-ticker" id="liveStaffTicker">
+      <span style="font-size:12px; color:#94a3b8;">Loading desk statuses...</span>
+    </div>
+
     <div class="tab-container">
       <button class="tab-btn active" id="tabStudent" type="button" onclick="switchTab('student')">Student Enquiry</button>
       <button class="tab-btn" id="tabFaculty" type="button" onclick="switchTab('faculty')">Faculty Enquiry</button>
+      <button class="tab-btn" id="tabGeneral" type="button" onclick="switchTab('general')">General Enquiry</button>
     </div>
 
-    <!-- Student Form -->
+    <!-- 1. Student Form -->
     <form id="studentForm">
       <label style="font-size:13px; font-weight:600;">Enrollment Number</label>
       <input type="text" id="stuEnroll" class="neu-input" placeholder="Type enrollment no..." oninput="lookupStudent()" required>
@@ -216,7 +248,7 @@
       </div>
 
       <label style="font-size:13px; font-weight:600;">Select SSD Staff Member</label>
-      <select id="stuStaff" class="neu-select staffDropdown" onchange="checkStaffStatus('stuStaff', 'stuStatusAlert', 'stuSubmitBtn')" required>
+      <select id="stuStaff" class="neu-select staffDropdown" onchange="checkStaffStatus('stuStaff', 'stuStatusAlert')" required>
         <option value="">-- Choose Staff Member --</option>
       </select>
 
@@ -228,14 +260,14 @@
       <button type="submit" id="stuSubmitBtn" class="neu-btn">Submit Student Enquiry</button>
     </form>
 
-    <!-- Faculty Form -->
+    <!-- 2. Faculty Form -->
     <form id="facultyForm" style="display:none;">
       <label style="font-size:13px; font-weight:600;">Faculty Name</label>
       <input type="text" id="facName" list="facList" class="neu-input" placeholder="Type or select faculty name..." required>
       <datalist id="facList"></datalist>
 
       <label style="font-size:13px; font-weight:600;">Select SSD Staff Member</label>
-      <select id="facStaff" class="neu-select staffDropdown" onchange="checkStaffStatus('facStaff', 'facStatusAlert', 'facSubmitBtn')" required>
+      <select id="facStaff" class="neu-select staffDropdown" onchange="checkStaffStatus('facStaff', 'facStatusAlert')" required>
         <option value="">-- Choose Staff Member --</option>
       </select>
 
@@ -245,6 +277,41 @@
       <textarea id="facQuery" rows="3" class="neu-textarea" placeholder="State query briefly..." required></textarea>
 
       <button type="submit" id="facSubmitBtn" class="neu-btn">Submit Faculty Enquiry</button>
+    </form>
+
+    <!-- 3. General Form (Visitors, Parents, Guests) -->
+    <form id="generalForm" style="display:none;">
+      <label style="font-size:13px; font-weight:600;">Visitor / Inquirer Full Name</label>
+      <input type="text" id="genName" class="neu-input" placeholder="Enter your full name" required>
+
+      <div class="grid-2">
+        <div>
+          <label style="font-size:13px; font-weight:600;">Contact Number / Email</label>
+          <input type="text" id="genContact" class="neu-input" placeholder="e.g. Phone or Email" required>
+        </div>
+        <div>
+          <label style="font-size:13px; font-weight:600;">Purpose Category</label>
+          <select id="genCategory" class="neu-select">
+            <option value="General Information">General Information</option>
+            <option value="Admissions / Campus Visit">Admissions / Campus Visit</option>
+            <option value="Parent Meeting">Parent Meeting</option>
+            <option value="Administrative Assistance">Administrative Assistance</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+
+      <label style="font-size:13px; font-weight:600;">Select SSD Staff Member</label>
+      <select id="genStaff" class="neu-select staffDropdown" onchange="checkStaffStatus('genStaff', 'genStatusAlert')" required>
+        <option value="">-- Choose Staff Member --</option>
+      </select>
+
+      <div id="genStatusAlert" class="status-alert-box"></div>
+
+      <label style="font-size:13px; font-weight:600;">Brief Enquiry Description</label>
+      <textarea id="genQuery" rows="3" class="neu-textarea" placeholder="State what you are looking for..." required></textarea>
+
+      <button type="submit" id="genSubmitBtn" class="neu-btn">Submit General Enquiry</button>
     </form>
   </div>
 
@@ -273,11 +340,11 @@
   let masterKioskPin = '2026';
   let studentMap = {};
   let facultyList = [];
+  let staffList = ["Person 1", "Person 2", "Person 3", "Person 4", "Person 5"];
   let staffStatusMap = {};
   let noticeConfig = { active: false, title: '', message: '' };
   let currentActiveTab = 'student';
 
-  // 1. Kiosk Daily Security Handshake
   function verifyKioskGate() {
     const todayStr = new Date().toISOString().substring(0, 10);
     const sessionKey = 'ssd_kiosk_unlock_' + todayStr;
@@ -314,7 +381,6 @@
 
   verifyKioskGate();
 
-  // 2. Initial Fallback Directory
   fetch('Combined data Student List CSV.json').then(r => r.json()).then(data => {
     data.forEach(item => {
       if (item.Enrolno) {
@@ -341,7 +407,6 @@
     });
   }).catch(() => {});
 
-  // 3. Dynamic Master Directory Listener
   db.collection('directory').doc('master').onSnapshot(doc => {
     if (doc.exists) {
       const d = doc.data();
@@ -359,9 +424,8 @@
     }
   });
 
-  // 4. Dynamic Staff Dropdowns
   db.collection('settings').doc('staffList').onSnapshot(doc => {
-    const staffList = (doc.exists && doc.data().names) ? doc.data().names : ["Person 1", "Person 2", "Person 3", "Person 4", "Person 5"];
+    staffList = (doc.exists && doc.data().names) ? doc.data().names : ["Person 1", "Person 2", "Person 3", "Person 4", "Person 5"];
     document.querySelectorAll('.staffDropdown').forEach(sel => {
       const prev = sel.value;
       sel.innerHTML = '<option value="">-- Choose Staff Member --</option>';
@@ -375,17 +439,32 @@
       sel.appendChild(noStaff);
       if (prev) sel.value = prev;
     });
+    renderLiveTicker();
   });
 
   db.collection('settings').doc('staffAvailability').onSnapshot(doc => {
     if (doc.exists) {
       staffStatusMap = doc.data() || {};
-      checkStaffStatus('stuStaff', 'stuStatusAlert', 'stuSubmitBtn');
-      checkStaffStatus('facStaff', 'facStatusAlert', 'facSubmitBtn');
+      renderLiveTicker();
+      checkStaffStatus('stuStaff', 'stuStatusAlert');
+      checkStaffStatus('facStaff', 'facStatusAlert');
+      checkStaffStatus('genStaff', 'genStatusAlert');
     }
   });
 
-  // 5. Broadcast Notice
+  function renderLiveTicker() {
+    const ticker = document.getElementById('liveStaffTicker');
+    if (!ticker) return;
+    ticker.innerHTML = '';
+    staffList.forEach(p => {
+      const st = staffStatusMap[p] || 'Available';
+      let cls = 'pill-avail';
+      if (st === 'Lunch Break' || st === 'In Meeting') cls = 'pill-break';
+      else if (st === 'On Leave') cls = 'pill-leave';
+      ticker.innerHTML += `<span class="status-pill ${cls}">● ${p}: <b>${st}</b></span>`;
+    });
+  }
+
   db.collection('settings').doc('broadcast').onSnapshot(doc => {
     if (doc.exists) {
       noticeConfig = {
@@ -412,32 +491,37 @@
     currentActiveTab = type;
     document.getElementById('studentForm').style.display = type === 'student' ? 'block' : 'none';
     document.getElementById('facultyForm').style.display = type === 'faculty' ? 'block' : 'none';
+    document.getElementById('generalForm').style.display = type === 'general' ? 'block' : 'none';
     document.getElementById('tabStudent').classList.toggle('active', type === 'student');
     document.getElementById('tabFaculty').classList.toggle('active', type === 'faculty');
+    document.getElementById('tabGeneral').classList.toggle('active', type === 'general');
     renderNoticeWidget();
   }
 
-  function checkStaffStatus(selectId, alertBoxId, submitBtnId) {
+  // Informative alert; does NOT block submission
+  function checkStaffStatus(selectId, alertBoxId) {
     const staff = document.getElementById(selectId).value;
     const alertBox = document.getElementById(alertBoxId);
-    const submitBtn = document.getElementById(submitBtnId);
     if (!staff || staff === "No Staff Available") {
       alertBox.style.display = 'none';
-      submitBtn.disabled = false;
       return;
     }
+
     const state = staffStatusMap[staff] || 'Available';
     if (state === 'Lunch Break' || state === 'In Meeting') {
-      alertBox.innerHTML = `<strong>Unavailable:</strong> ${staff} is currently <strong>${state.toLowerCase()}</strong>. Please visit after some time or select another staff member.`;
+      alertBox.style.background = '#fef3c7';
+      alertBox.style.border = '1px solid #fde68a';
+      alertBox.style.color = '#92400e';
+      alertBox.innerHTML = `<strong>Note:</strong> ${staff} is currently <strong>${state.toLowerCase()}</strong>. You may still submit your query, but there may be a delay. You can also choose another available staff member.`;
       alertBox.style.display = 'block';
-      submitBtn.disabled = true;
     } else if (state === 'On Leave') {
-      alertBox.innerHTML = `<strong>On Leave:</strong> ${staff} is on leave today. Please select another SSD staff member to submit your enquiry.`;
+      alertBox.style.background = '#fee2e2';
+      alertBox.style.border = '1px solid #fecaca';
+      alertBox.style.color = '#991b1b';
+      alertBox.innerHTML = `<strong>Notice:</strong> ${staff} is on leave today. You may submit for their records, or select another active staff member for immediate assistance.`;
       alertBox.style.display = 'block';
-      submitBtn.disabled = true;
     } else {
       alertBox.style.display = 'none';
-      submitBtn.disabled = false;
     }
   }
 
@@ -555,6 +639,47 @@
     } finally {
       btn.disabled = false;
       btn.innerText = "Submit Faculty Enquiry";
+    }
+  });
+
+  document.getElementById('generalForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('genSubmitBtn');
+    btn.disabled = true;
+    btn.innerText = "Submitting...";
+
+    const genName = document.getElementById('genName').value.trim();
+    const contact = document.getElementById('genContact').value.trim();
+    const cat = document.getElementById('genCategory').value;
+    const staff = document.getElementById('genStaff').value;
+    const query = document.getElementById('genQuery').value.trim();
+
+    try {
+      const nowIso = new Date().toISOString();
+      await db.collection('enquiries').add({
+        type: 'General',
+        enrollment: 'GUEST',
+        name: genName,
+        contact: contact,
+        category: cat,
+        sec: '',
+        sem: '',
+        assignedStaff: staff,
+        query: `[${cat}] (Contact: ${contact}) - ${query}`,
+        status: 'Open',
+        isRepeatVisitor: false,
+        createdDate: nowIso,
+        startTimestamp: Date.now()
+      });
+
+      alert(`Thank you, ${genName}. Your enquiry has been submitted to ${staff}.`);
+      document.getElementById('generalForm').reset();
+      document.getElementById('genStatusAlert').style.display = 'none';
+    } catch (err) {
+      alert("Submission error: " + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerText = "Submit General Enquiry";
     }
   });
 </script>
