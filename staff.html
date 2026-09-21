@@ -196,6 +196,11 @@
     <label style="font-size:12px; font-weight:700; color:var(--subtext);">Select Staff Profile</label>
     <select id="staffSelect" class="neu-inset" onchange="onStaffProfileChange()">
       <option value="">-- Choose Profile --</option>
+      <option value="Person 1">Person 1</option>
+      <option value="Person 2">Person 2</option>
+      <option value="Person 3">Person 3</option>
+      <option value="Person 4">Person 4</option>
+      <option value="Person 5">Person 5</option>
     </select>
 
     <div id="passwordArea" style="display:none; margin-top:14px;">
@@ -374,36 +379,36 @@
   let isProfileRegistered = false;
   let currentStaffTickets = [];
 
-  // Populate immediate default profiles synchronously on load
-  function populateDropdown(list) {
+  function renderStaffDropdown(profiles) {
     const sel = document.getElementById('staffSelect');
+    if (!sel) return;
     const currentVal = sel.value;
     sel.innerHTML = '<option value="">-- Choose Profile --</option>';
-    list.forEach(p => {
+    profiles.forEach(p => {
       const opt = document.createElement('option');
       opt.value = p;
       opt.innerText = p;
       sel.appendChild(opt);
     });
-    if (currentVal && list.includes(currentVal)) {
+    if (currentVal && profiles.includes(currentVal)) {
       sel.value = currentVal;
     }
   }
 
-  // Populate instantly with default list
-  populateDropdown(fullStaffList);
+  // Pre-fill immediately on load
+  renderStaffDropdown(fullStaffList);
 
-  // Synchronize dynamic list from Firestore
+  // Sync with Firestore dynamically
   db.collection('settings').doc('staffList').onSnapshot(doc => {
     if (doc.exists && doc.data() && Array.isArray(doc.data().names) && doc.data().names.length > 0) {
       fullStaffList = doc.data().names;
     } else {
       fullStaffList = [...defaultProfiles];
     }
-    populateDropdown(fullStaffList);
+    renderStaffDropdown(fullStaffList);
   }, err => {
-    console.warn("Firestore staffList listener fallback:", err);
-    populateDropdown(defaultProfiles);
+    console.warn("Firestore staffList listener error:", err);
+    renderStaffDropdown(defaultProfiles);
   });
 
   async function onStaffProfileChange() {
@@ -441,7 +446,6 @@
       }
     } catch (err) {
       console.error("Error reading staff credentials:", err);
-      // Fallback: Allow creation/sign-in directly
       pwdArea.style.display = 'block';
       pwdLabel.innerText = "Enter Desk Password:";
       confirmDiv.style.display = 'none';
