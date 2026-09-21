@@ -195,7 +195,7 @@
   <div style="text-align:left; margin-top: 15px;">
     <label style="font-size:12px; font-weight:700; color:var(--subtext);">Select Staff Profile</label>
     <select id="staffSelect" class="neu-inset" onchange="onStaffProfileChange()">
-      <option value="">-- Synchronizing Profiles... --</option>
+      <option value="">-- Choose Profile --</option>
     </select>
 
     <div id="passwordArea" style="display:none; margin-top:14px;">
@@ -369,21 +369,41 @@
   const db = firebase.firestore();
 
   let activeStaff = '';
-  let fullStaffList = [];
+  let defaultProfiles = ["Person 1", "Person 2", "Person 3", "Person 4", "Person 5"];
+  let fullStaffList = [...defaultProfiles];
   let isProfileRegistered = false;
   let currentStaffTickets = [];
 
-  db.collection('settings').doc('staffList').onSnapshot(doc => {
-    fullStaffList = (doc.exists && doc.data().names) ? doc.data().names : ["Person 1", "Person 2", "Person 3", "Person 4", "Person 5"];
+  // Populate immediate default profiles synchronously on load
+  function populateDropdown(list) {
     const sel = document.getElementById('staffSelect');
-    const prev = sel.value;
+    const currentVal = sel.value;
     sel.innerHTML = '<option value="">-- Choose Profile --</option>';
-    fullStaffList.forEach(p => {
+    list.forEach(p => {
       const opt = document.createElement('option');
-      opt.value = p; opt.innerText = p;
+      opt.value = p;
+      opt.innerText = p;
       sel.appendChild(opt);
     });
-    if (prev) sel.value = prev;
+    if (currentVal && list.includes(currentVal)) {
+      sel.value = currentVal;
+    }
+  }
+
+  // Populate instantly with default list
+  populateDropdown(fullStaffList);
+
+  // Synchronize dynamic list from Firestore
+  db.collection('settings').doc('staffList').onSnapshot(doc => {
+    if (doc.exists && doc.data() && Array.isArray(doc.data().names) && doc.data().names.length > 0) {
+      fullStaffList = doc.data().names;
+    } else {
+      fullStaffList = [...defaultProfiles];
+    }
+    populateDropdown(fullStaffList);
+  }, err => {
+    console.warn("Firestore staffList listener fallback:", err);
+    populateDropdown(defaultProfiles);
   });
 
   async function onStaffProfileChange() {
@@ -400,23 +420,31 @@
       return;
     }
 
-    const doc = await db.collection('staffSecurity').doc(p).get();
-    pwdArea.style.display = 'block';
+    try {
+      const doc = await db.collection('staffSecurity').doc(p).get();
+      pwdArea.style.display = 'block';
 
-    if (!doc.exists || !doc.data().password) {
-      isProfileRegistered = false;
-      pwdLabel.innerText = "Create Your Password (First Login):";
-      confirmDiv.style.display = 'block';
-      noticeText.innerText = "New Profile Setup";
-      authBtn.innerText = "Create Password & Log In";
-      forgotLink.style.display = 'none';
-    } else {
-      isProfileRegistered = true;
+      if (!doc.exists || !doc.data() || !doc.data().password) {
+        isProfileRegistered = false;
+        pwdLabel.innerText = "Create Your Password (First Login):";
+        confirmDiv.style.display = 'block';
+        noticeText.innerText = "New Profile Setup";
+        authBtn.innerText = "Create Password & Log In";
+        forgotLink.style.display = 'none';
+      } else {
+        isProfileRegistered = true;
+        pwdLabel.innerText = "Enter Desk Password:";
+        confirmDiv.style.display = 'none';
+        noticeText.innerText = "";
+        authBtn.innerText = "Sign In to Desk";
+        forgotLink.style.display = 'inline';
+      }
+    } catch (err) {
+      console.error("Error reading staff credentials:", err);
+      // Fallback: Allow creation/sign-in directly
+      pwdArea.style.display = 'block';
       pwdLabel.innerText = "Enter Desk Password:";
       confirmDiv.style.display = 'none';
-      noticeText.innerText = "";
-      authBtn.innerText = "Sign In to Desk";
-      forgotLink.style.display = 'inline';
     }
   }
 
@@ -427,24 +455,28 @@
     if (!p) return alert("Please select your staff profile name.");
     if (!pwd) return alert("Please enter your password.");
 
-    if (!isProfileRegistered) {
-      const repeat = document.getElementById('staffConfirmPasswordInput').value.trim();
-      if (pwd.length < 4) return alert("Password must be at least 4 characters long.");
-      if (pwd !== repeat) return alert("Passwords do not match.");
+    try {
+      if (!isProfileRegistered) {
+        const repeat = document.getElementById('staffConfirmPasswordInput').value.trim();
+        if (pwd.length < 4) return alert("Password must be at least 4 characters long.");
+        if (pwd !== repeat) return alert("Passwords do not match.");
 
-      await db.collection('staffSecurity').doc(p).set({
-        password: pwd,
-        updatedAt: new Date().toISOString()
-      });
-      alert("Password created successfully. Logging into workstation.");
-      enterWorkstation(p);
-    } else {
-      const doc = await db.collection('staffSecurity').doc(p).get();
-      if (doc.exists && doc.data().password === pwd) {
+        await db.collection('staffSecurity').doc(p).set({
+          password: pwd,
+          updatedAt: new Date().toISOString()
+        });
+        alert("Password created successfully. Logging into workstation.");
         enterWorkstation(p);
       } else {
-        alert("Incorrect password for " + p + ".");
+        const doc = await db.collection('staffSecurity').doc(p).get();
+        if (doc.exists && doc.data().password === pwd) {
+          enterWorkstation(p);
+        } else {
+          alert("Incorrect password for " + p + ".");
+        }
       }
+    } catch (err) {
+      alert("Authentication error: " + err.message);
     }
   }
 
@@ -457,14 +489,17 @@
       return alert("Password reset cancelled or too short (min 4 characters).");
     }
 
-    await db.collection('passwordResetRequests').doc(p).set({
-      staffName: p,
-      requestedNewPassword: newAttempt.trim(),
-      status: 'Pending Approval',
-      requestDate: new Date().toISOString()
-    });
-
-    alert(`Password reset request sent to the SSD Head. Once approved on the Executive Portal, your new password will be activated.`);
+    try {
+      await db.collection('passwordResetRequests').doc(p).set({
+        staffName: p,
+        requestedNewPassword: newAttempt.trim(),
+        status: 'Pending Approval',
+        requestDate: new Date().toISOString()
+      });
+      alert(`Password reset request sent to the SSD Head. Once approved on the Executive Portal, your new password will be activated.`);
+    } catch (err) {
+      alert("Error submitting request: " + err.message);
+    }
   }
 
   function enterWorkstation(staffName) {
@@ -474,9 +509,11 @@
     document.getElementById('staffHeader').innerText = "Workstation: " + activeStaff;
 
     db.collection('settings').doc('staffAvailability').get().then(doc => {
-      const state = (doc.exists && doc.data()[activeStaff]) || 'Available';
+      const state = (doc.exists && doc.data() && doc.data()[activeStaff]) || 'Available';
       updateStatusBadge(state);
       document.getElementById('modalStatusSelect').value = state;
+    }).catch(() => {
+      updateStatusBadge('Available');
     });
 
     listenToQueue();
@@ -511,7 +548,7 @@
     }, { merge: true }).then(() => {
       updateStatusBadge(selectedState);
       closeStatusModal();
-    });
+    }).catch(err => alert("Error: " + err.message));
   }
 
   function openTransferModal(id) {
@@ -602,6 +639,8 @@
 
       document.getElementById('studentListContainer').innerHTML = stuHTML || '<p style="color:#94a3b8; text-align:center; padding:30px 0;">No pending student enquiries.</p>';
       document.getElementById('facultyListContainer').innerHTML = facHTML || '<p style="color:#94a3b8; text-align:center; padding:30px 0;">No pending faculty enquiries.</p>';
+    }, err => {
+      console.error("Queue listener error:", err);
     });
   }
 
@@ -609,7 +648,6 @@
     const timeStr = d.createdDate ? new Date(d.createdDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently';
     const isBroadcast = d.assignedStaff === 'No Staff Available';
 
-    // Check if within 1 hour edit window (3600000 ms)
     const createdAt = d.startTimestamp || (d.createdDate ? new Date(d.createdDate).getTime() : 0);
     const canEdit = (Date.now() - createdAt) <= 3600000;
     const remainingMins = Math.max(0, Math.round((3600000 - (Date.now() - createdAt)) / 60000));
@@ -669,7 +707,7 @@
       query: updated,
       editedBy: activeStaff,
       editedAt: new Date().toISOString()
-    }).then(() => alert("Inquiry updated successfully."));
+    }).then(() => alert("Inquiry updated successfully.")).catch(err => alert("Error: " + err.message));
   }
 
   function openStaffDrilldown(type, title) {
