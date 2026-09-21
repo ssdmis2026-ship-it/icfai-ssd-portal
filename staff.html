@@ -178,28 +178,47 @@
 </head>
 <body>
 
+<!-- Staff Authentication Gate -->
 <div class="neu-card" id="loginBox" style="max-width: 440px; margin: 60px auto; text-align: center;">
-  <h2 style="color:var(--primary); margin-bottom: 8px;">SSD Staff Portal</h2>
-  <p style="color:var(--subtext); font-size:14px; margin-top:0;">Select your desk profile</p>
+  <h2 style="color:var(--primary); margin-bottom: 8px;">SSD Staff Terminal</h2>
+  <p style="color:var(--subtext); font-size:14px; margin-top:0;">Authenticate to access your workstation</p>
   
-  <select id="staffSelect" class="neu-inset" style="margin-top: 15px;">
-    <option value="">-- Synchronizing Profiles... --</option>
-  </select>
+  <div style="text-align:left; margin-top: 15px;">
+    <label style="font-size:12px; font-weight:700; color:var(--subtext);">Select Staff Profile</label>
+    <select id="staffSelect" class="neu-inset" onchange="onStaffProfileChange()">
+      <option value="">-- Synchronizing Profiles... --</option>
+    </select>
+
+    <div id="passwordArea" style="display:none; margin-top:14px;">
+      <label id="pwdLabel" style="font-size:12px; font-weight:700; color:var(--subtext);">Enter Password</label>
+      <input type="password" id="staffPasswordInput" class="neu-inset" placeholder="Password">
+      
+      <div id="confirmPwdDiv" style="display:none; margin-top:10px;">
+        <label style="font-size:12px; font-weight:700; color:var(--subtext);">Confirm New Password</label>
+        <input type="password" id="staffConfirmPasswordInput" class="neu-inset" placeholder="Repeat Password">
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+        <span id="pwdNoticeText" style="font-size:12px; color:var(--accent);"></span>
+        <a href="javascript:void(0)" id="forgotPwdLink" onclick="triggerStaffForgotPassword()" style="font-size:12px; color:var(--crimson); text-decoration:none;">Forgot Password?</a>
+      </div>
+    </div>
+  </div>
   
-  <button onclick="loginStaff()" type="button" class="neu-btn" style="width: 100%; margin-top: 22px; color:var(--accent);">
-    Open Workstation
+  <button onclick="handleStaffAuth()" type="button" class="neu-btn" id="authBtn" style="width: 100%; margin-top: 22px; color:var(--accent);">
+    Sign In to Desk
   </button>
 </div>
 
+<!-- Main Desk Interface -->
 <div id="deskView" style="display:none; max-width: 1000px; margin: auto;">
-  
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 25px; flex-wrap:wrap; gap:12px;">
     <div>
       <div style="display:flex; align-items:center; gap:12px;">
         <h2 id="staffHeader" style="color:var(--primary); margin:0;">Staff Dashboard</h2>
         <span id="currentStatusBadge" class="status-badge" style="background:#dcfce7; color:var(--green);">Available</span>
       </div>
-      <span style="font-size: 13px; color:var(--subtext);">Live Cloud Queue Connected</span>
+      <span style="font-size: 13px; color:var(--subtext);">Secure Terminal Active</span>
     </div>
 
     <div style="display:flex; gap:10px;">
@@ -207,7 +226,7 @@
         Availability Settings
       </button>
       <button onclick="location.reload()" type="button" class="neu-btn">
-        Switch User
+        Log Out
       </button>
     </div>
   </div>
@@ -257,10 +276,9 @@
       <p style="color:#94a3b8; text-align:center; padding:30px 0;">No pending faculty enquiries.</p>
     </div>
   </div>
-
 </div>
 
-<!-- Staff Availability Settings Modal -->
+<!-- Availability Modal -->
 <div id="statusModal" class="modal-overlay">
   <div class="neu-card" style="max-width: 420px; width: 100%;">
     <h3 style="color:var(--primary); margin-top:0;">Desk Availability Settings</h3>
@@ -281,21 +299,18 @@
   </div>
 </div>
 
-<!-- Desk Transfer Modal -->
+<!-- Transfer Modal -->
 <div id="transferModal" class="modal-overlay">
   <div class="neu-card" style="max-width: 440px; width: 100%;">
     <h3 style="color:var(--primary); margin-top:0;">Reassign / Transfer Ticket</h3>
-    <p style="font-size:13px; color:var(--subtext); margin-bottom:14px;">
-      Forward this enquiry to another desk. It will instantly move to their queue.
-    </p>
+    <p style="font-size:13px; color:var(--subtext); margin-bottom:14px;">Forward this enquiry to another desk.</p>
 
     <input type="hidden" id="transferDocId">
-    
     <label style="font-size:13px; font-weight:600;">Transfer To Staff Member:</label>
     <select id="transferTargetStaff" class="neu-inset" style="margin-top:6px; margin-bottom:14px;"></select>
 
-    <label style="font-size:13px; font-weight:600;">Transfer Notes / Reason (Optional):</label>
-    <textarea id="transferNotes" class="neu-inset" rows="2" placeholder="e.g. Requires scholarship clearance..."></textarea>
+    <label style="font-size:13px; font-weight:600;">Transfer Notes / Reason:</label>
+    <textarea id="transferNotes" class="neu-inset" rows="2" placeholder="e.g. Forwarded for fee verification..."></textarea>
 
     <div style="display:flex; gap:10px; margin-top:18px;">
       <button onclick="executeTransfer()" type="button" class="neu-btn" style="flex:1; color:var(--accent);">Confirm Transfer</button>
@@ -318,17 +333,116 @@
 
   let activeStaff = '';
   let fullStaffList = [];
+  let isProfileRegistered = false;
 
   db.collection('settings').doc('staffList').onSnapshot(doc => {
     fullStaffList = (doc.exists && doc.data().names) ? doc.data().names : ["Person 1", "Person 2", "Person 3", "Person 4", "Person 5"];
     const sel = document.getElementById('staffSelect');
+    const prev = sel.value;
     sel.innerHTML = '<option value="">-- Choose Profile --</option>';
     fullStaffList.forEach(p => {
       const opt = document.createElement('option');
       opt.value = p; opt.innerText = p;
       sel.appendChild(opt);
     });
+    if (prev) sel.value = prev;
   });
+
+  async function onStaffProfileChange() {
+    const p = document.getElementById('staffSelect').value;
+    const pwdArea = document.getElementById('passwordArea');
+    const pwdLabel = document.getElementById('pwdLabel');
+    const confirmDiv = document.getElementById('confirmPwdDiv');
+    const noticeText = document.getElementById('pwdNoticeText');
+    const authBtn = document.getElementById('authBtn');
+    const forgotLink = document.getElementById('forgotPwdLink');
+
+    if (!p) {
+      pwdArea.style.display = 'none';
+      return;
+    }
+
+    const doc = await db.collection('staffSecurity').doc(p).get();
+    pwdArea.style.display = 'block';
+
+    if (!doc.exists || !doc.data().password) {
+      isProfileRegistered = false;
+      pwdLabel.innerText = "Create Your Password (First Login):";
+      confirmDiv.style.display = 'block';
+      noticeText.innerText = "New Profile Setup";
+      authBtn.innerText = "Create Password & Log In";
+      forgotLink.style.display = 'none';
+    } else {
+      isProfileRegistered = true;
+      pwdLabel.innerText = "Enter Desk Password:";
+      confirmDiv.style.display = 'none';
+      noticeText.innerText = "";
+      authBtn.innerText = "Sign In to Desk";
+      forgotLink.style.display = 'inline';
+    }
+  }
+
+  async function handleStaffAuth() {
+    const p = document.getElementById('staffSelect').value;
+    const pwd = document.getElementById('staffPasswordInput').value.trim();
+
+    if (!p) return alert("Please select your staff profile name.");
+    if (!pwd) return alert("Please enter your password.");
+
+    if (!isProfileRegistered) {
+      const repeat = document.getElementById('staffConfirmPasswordInput').value.trim();
+      if (pwd.length < 4) return alert("Password must be at least 4 characters long.");
+      if (pwd !== repeat) return alert("Passwords do not match.");
+
+      await db.collection('staffSecurity').doc(p).set({
+        password: pwd,
+        updatedAt: new Date().toISOString()
+      });
+      alert("Password created successfully. Logging into workstation.");
+      enterWorkstation(p);
+    } else {
+      const doc = await db.collection('staffSecurity').doc(p).get();
+      if (doc.exists && doc.data().password === pwd) {
+        enterWorkstation(p);
+      } else {
+        alert("Incorrect password for " + p + ".");
+      }
+    }
+  }
+
+  async function triggerStaffForgotPassword() {
+    const p = document.getElementById('staffSelect').value;
+    if (!p) return alert("Select profile first.");
+    
+    const newAttempt = prompt(`Enter desired new password for ${p}:\n(This change requires SSD Head authorization before taking effect)`);
+    if (!newAttempt || newAttempt.trim().length < 4) {
+      return alert("Password reset cancelled or too short (min 4 characters).");
+    }
+
+    await db.collection('passwordResetRequests').doc(p).set({
+      staffName: p,
+      requestedNewPassword: newAttempt.trim(),
+      status: 'Pending Approval',
+      requestDate: new Date().toISOString()
+    });
+
+    alert(`Password reset request sent to the SSD Head. Once approved on the Executive Portal, your new password will be activated.`);
+  }
+
+  function enterWorkstation(staffName) {
+    activeStaff = staffName;
+    document.getElementById('loginBox').style.display = 'none';
+    document.getElementById('deskView').style.display = 'block';
+    document.getElementById('staffHeader').innerText = "Workstation: " + activeStaff;
+
+    db.collection('settings').doc('staffAvailability').get().then(doc => {
+      const state = (doc.exists && doc.data()[activeStaff]) || 'Available';
+      updateStatusBadge(state);
+      document.getElementById('modalStatusSelect').value = state;
+    });
+
+    listenToQueue();
+  }
 
   db.collection('settings').doc('staffAvailability').onSnapshot(doc => {
     if (doc.exists && activeStaff) {
@@ -347,22 +461,6 @@
     } else {
       badge.style.background = '#fee2e2'; badge.style.color = 'var(--crimson)';
     }
-  }
-
-  function loginStaff() {
-    activeStaff = document.getElementById('staffSelect').value;
-    if (!activeStaff) return alert('Select staff profile');
-    document.getElementById('loginBox').style.display = 'none';
-    document.getElementById('deskView').style.display = 'block';
-    document.getElementById('staffHeader').innerText = "Workstation: " + activeStaff;
-
-    db.collection('settings').doc('staffAvailability').get().then(doc => {
-      const state = (doc.exists && doc.data()[activeStaff]) || 'Available';
-      updateStatusBadge(state);
-      document.getElementById('modalStatusSelect').value = state;
-    });
-
-    listenToQueue();
   }
 
   function openStatusModal() { document.getElementById('statusModal').style.display = 'flex'; }
@@ -430,7 +528,6 @@
       snapshot.forEach(doc => {
         const d = doc.data();
         const id = doc.id;
-        
         const isAssigned = (d.assignedStaff === activeStaff || d.assignedStaff === 'No Staff Available');
         const isOpen = (d.status === 'Open' || d.status === 'Open - Pending Action');
 
