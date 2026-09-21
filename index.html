@@ -142,16 +142,48 @@
       font-size: 13px;
       line-height: 1.4;
       color: #991b1b;
-      animation: fadeIn 0.25s ease;
     }
 
+    /* Kiosk Security Gate Modal */
+    #kioskGateOverlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--bg);
+      z-index: 9999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .gate-box {
+      background: var(--bg);
+      border-radius: 24px;
+      box-shadow: 12px 12px 24px var(--shadow-dark), -12px -12px 24px var(--shadow-light);
+      padding: 35px 30px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      box-sizing: border-box;
+    }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body>
 
-<div class="layout-wrapper">
-  
+<!-- Kiosk Gate Modal: Daily Device Unlock -->
+<div id="kioskGateOverlay" style="display:none;">
+  <div class="gate-box">
+    <img src="logo.png" alt="Logo" style="max-height:48px; margin-bottom:12px;" onerror="this.style.display='none'">
+    <h3 style="color:var(--primary); margin:0 0 6px 0;">Front Desk Terminal</h3>
+    <p style="font-size:13px; color:#64748b; margin-top:0;">Daily authentication required for this device.</p>
+    
+    <input type="password" id="kioskPinInput" class="neu-input" placeholder="Enter Daily Access PIN" style="text-align:center; letter-spacing:3px; font-size:16px;">
+    <div id="kioskPinError" style="color:var(--crimson); font-size:13px; margin-bottom:12px; display:none;">Incorrect Access PIN. Check with SSD Head.</div>
+    <button type="button" class="neu-btn" onclick="validateKioskPin()">Unlock Device</button>
+  </div>
+</div>
+
+<div class="layout-wrapper" id="mainDeskContent" style="display:none;">
   <div class="neu-card">
     <div class="header">
       <img src="logo.png" alt="ICFAI Foundation for Higher Education" onerror="this.style.display='none'">
@@ -216,7 +248,6 @@
     </form>
   </div>
 
-  <!-- Announcement Card -->
   <div id="sideNoticeContainer">
     <div class="notice-header-badge">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
@@ -225,7 +256,6 @@
     <h4 id="sideNoticeTitle" style="margin:0 0 8px 0; color:var(--primary); font-size:16px;">Notice Board</h4>
     <div id="sideNoticeBody" style="font-size:13px; line-height:1.55; color:#334155;"></div>
   </div>
-
 </div>
 
 <script>
@@ -240,12 +270,51 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
+  let masterKioskPin = '2026';
   let studentMap = {};
   let facultyList = [];
   let staffStatusMap = {};
   let noticeConfig = { active: false, title: '', message: '' };
   let currentActiveTab = 'student';
 
+  // 1. Kiosk Daily Security Handshake
+  function verifyKioskGate() {
+    const todayStr = new Date().toISOString().substring(0, 10);
+    const sessionKey = 'ssd_kiosk_unlock_' + todayStr;
+    const isUnlocked = localStorage.getItem(sessionKey);
+
+    db.collection('security').doc('kiosk').onSnapshot(doc => {
+      if (doc.exists && doc.data().pin) {
+        masterKioskPin = String(doc.data().pin).trim();
+      }
+    });
+
+    if (isUnlocked === 'true') {
+      document.getElementById('kioskGateOverlay').style.display = 'none';
+      document.getElementById('mainDeskContent').style.display = 'flex';
+    } else {
+      document.getElementById('kioskGateOverlay').style.display = 'flex';
+      document.getElementById('mainDeskContent').style.display = 'none';
+    }
+  }
+
+  function validateKioskPin() {
+    const input = document.getElementById('kioskPinInput').value.trim();
+    const errBox = document.getElementById('kioskPinError');
+    if (input === masterKioskPin) {
+      const todayStr = new Date().toISOString().substring(0, 10);
+      localStorage.setItem('ssd_kiosk_unlock_' + todayStr, 'true');
+      document.getElementById('kioskGateOverlay').style.display = 'none';
+      document.getElementById('mainDeskContent').style.display = 'flex';
+      errBox.style.display = 'none';
+    } else {
+      errBox.style.display = 'block';
+    }
+  }
+
+  verifyKioskGate();
+
+  // 2. Initial Fallback Directory
   fetch('Combined data Student List CSV.json').then(r => r.json()).then(data => {
     data.forEach(item => {
       if (item.Enrolno) {
@@ -272,6 +341,7 @@
     });
   }).catch(() => {});
 
+  // 3. Dynamic Master Directory Listener
   db.collection('directory').doc('master').onSnapshot(doc => {
     if (doc.exists) {
       const d = doc.data();
@@ -289,6 +359,7 @@
     }
   });
 
+  // 4. Dynamic Staff Dropdowns
   db.collection('settings').doc('staffList').onSnapshot(doc => {
     const staffList = (doc.exists && doc.data().names) ? doc.data().names : ["Person 1", "Person 2", "Person 3", "Person 4", "Person 5"];
     document.querySelectorAll('.staffDropdown').forEach(sel => {
@@ -314,6 +385,7 @@
     }
   });
 
+  // 5. Broadcast Notice
   db.collection('settings').doc('broadcast').onSnapshot(doc => {
     if (doc.exists) {
       noticeConfig = {
@@ -431,7 +503,7 @@
         startTimestamp: Date.now()
       });
 
-      alert(`Thank you, ${name}. Your enquiry has been submitted to ${staff}.`);
+      alert(`Thank you, ${name}. Your enquiry has been registered with ${staff}.`);
       document.getElementById('studentForm').reset();
       document.getElementById('stuStatusAlert').style.display = 'none';
     } catch (err) {
@@ -461,7 +533,6 @@
       }
 
       const nowIso = new Date().toISOString();
-
       await db.collection('enquiries').add({
         type: 'Faculty',
         enrollment: 'FACULTY',
