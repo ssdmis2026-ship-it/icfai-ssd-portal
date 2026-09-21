@@ -34,7 +34,7 @@
       align-items: flex-start;
       gap: 30px;
       width: 100%;
-      max-width: 1120px;
+      max-width: 1080px;
       margin: auto;
     }
     @media (max-width: 900px) {
@@ -46,7 +46,7 @@
       box-shadow: 12px 12px 24px var(--shadow-dark), -12px -12px 24px var(--shadow-light);
       padding: 35px;
       width: 100%;
-      max-width: 600px;
+      max-width: 580px;
       box-sizing: border-box;
     }
     .header { text-align: center; margin-bottom: 20px; }
@@ -109,44 +109,22 @@
     .grid-2 { display: flex; gap: 12px; }
     .grid-2 > div { flex: 1; }
 
-    /* Live Staff Status Bar */
-    .status-ticker {
-      background: var(--bg);
-      border-radius: 16px;
-      padding: 12px 16px;
-      box-shadow: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);
-      margin-bottom: 20px;
+    /* Right Column Widgets */
+    .sidebar-column {
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-    }
-    .status-pill {
-      font-size: 11px;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 10px;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-    }
-    .pill-avail { background: #dcfce7; color: var(--green); }
-    .pill-break { background: #fef3c7; color: var(--amber); }
-    .pill-leave { background: #fee2e2; color: var(--crimson); }
-
-    /* Side Announcement Container */
-    #sideNoticeContainer {
-      display: none;
+      flex-direction: column;
+      gap: 20px;
       width: 100%;
       max-width: 320px;
+    }
+    .neu-widget {
       background: var(--bg);
       border-radius: 20px;
-      padding: 24px;
+      padding: 22px;
       box-sizing: border-box;
       box-shadow: 8px 8px 18px var(--shadow-dark), -8px -8px 18px var(--shadow-light);
-      border-left: 5px solid var(--amber);
-      animation: fadeIn 0.4s ease-out;
     }
+
     .notice-header-badge {
       display: inline-flex;
       align-items: center;
@@ -161,6 +139,36 @@
       border-radius: 8px;
       margin-bottom: 10px;
     }
+
+    /* Desk Roster Status List */
+    .roster-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .roster-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: var(--bg);
+      box-shadow: inset 2px 2px 4px var(--shadow-dark), inset -2px -2px 4px var(--shadow-light);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+    }
+    .dot-avail { background: var(--green); }
+    .dot-break { background: var(--amber); }
+    .dot-leave { background: var(--crimson); }
+
     .status-alert-box {
       display: none;
       border-radius: 12px;
@@ -190,12 +198,11 @@
       text-align: center;
       box-sizing: border-box;
     }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body>
 
-<!-- Kiosk Gate Modal: Daily Device Unlock -->
+<!-- Kiosk Daily Authentication Gate -->
 <div id="kioskGateOverlay" style="display:none;">
   <div class="gate-box">
     <img src="logo.png" alt="Logo" style="max-height:48px; margin-bottom:12px;" onerror="this.style.display='none'">
@@ -209,17 +216,13 @@
 </div>
 
 <div class="layout-wrapper" id="mainDeskContent" style="display:none;">
+  
+  <!-- Left Side: Main Visitor Form -->
   <div class="neu-card">
     <div class="header">
       <img src="logo.png" alt="ICFAI Foundation for Higher Education" onerror="this.style.display='none'">
       <h3 style="color:var(--primary); margin: 5px 0;">Student Service Department (SSD)</h3>
       <p style="color:#64748b; font-size: 13px; margin:0;">Visitor Enquiry & Check-in Desk</p>
-    </div>
-
-    <!-- Live Continuous Desk Availability Display -->
-    <div style="font-size:11px; font-weight:700; color:#64748b; margin-bottom:6px;">LIVE STAFF STATUS:</div>
-    <div class="status-ticker" id="liveStaffTicker">
-      <span style="font-size:12px; color:#94a3b8;">Loading desk statuses...</span>
     </div>
 
     <div class="tab-container">
@@ -279,7 +282,7 @@
       <button type="submit" id="facSubmitBtn" class="neu-btn">Submit Faculty Enquiry</button>
     </form>
 
-    <!-- 3. General Form (Visitors, Parents, Guests) -->
+    <!-- 3. General Form -->
     <form id="generalForm" style="display:none;">
       <label style="font-size:13px; font-weight:600;">Visitor / Inquirer Full Name</label>
       <input type="text" id="genName" class="neu-input" placeholder="Enter your full name" required>
@@ -315,14 +318,34 @@
     </form>
   </div>
 
-  <div id="sideNoticeContainer">
-    <div class="notice-header-badge">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-      Official Announcement
+  <!-- Right Side Column: Pinned Announcement & Duty Roster -->
+  <div class="sidebar-column">
+    
+    <!-- Pinned Announcement Card (Student View Only) -->
+    <div id="sideNoticeContainer" class="neu-widget" style="border-left: 5px solid var(--amber); display:none;">
+      <div class="notice-header-badge">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+        Official Announcement
+      </div>
+      <h4 id="sideNoticeTitle" style="margin:0 0 8px 0; color:var(--primary); font-size:16px;">Notice Board</h4>
+      <div id="sideNoticeBody" style="font-size:13px; line-height:1.55; color:#334155;"></div>
     </div>
-    <h4 id="sideNoticeTitle" style="margin:0 0 8px 0; color:var(--primary); font-size:16px;">Notice Board</h4>
-    <div id="sideNoticeBody" style="font-size:13px; line-height:1.55; color:#334155;"></div>
+
+    <!-- SSD Desk Duty Roster (Live Availability) -->
+    <div class="neu-widget" style="border-left: 5px solid var(--accent);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <h4 style="margin:0; color:var(--primary); font-size:15px;">SSD Desk Duty Roster</h4>
+        <span style="font-size:10px; font-weight:700; color:var(--green); background:#dcfce7; padding:2px 6px; border-radius:6px;">LIVE</span>
+      </div>
+      <p style="font-size:12px; color:#64748b; margin:0 0 10px 0;">Current staff availability status</p>
+      
+      <div class="roster-list" id="liveStaffTicker">
+        <span style="font-size:12px; color:#94a3b8;">Loading roster...</span>
+      </div>
+    </div>
+
   </div>
+
 </div>
 
 <script>
@@ -439,29 +462,41 @@
       sel.appendChild(noStaff);
       if (prev) sel.value = prev;
     });
-    renderLiveTicker();
+    renderDutyRoster();
   });
 
   db.collection('settings').doc('staffAvailability').onSnapshot(doc => {
     if (doc.exists) {
       staffStatusMap = doc.data() || {};
-      renderLiveTicker();
+      renderDutyRoster();
       checkStaffStatus('stuStaff', 'stuStatusAlert');
       checkStaffStatus('facStaff', 'facStatusAlert');
       checkStaffStatus('genStaff', 'genStatusAlert');
     }
   });
 
-  function renderLiveTicker() {
+  function renderDutyRoster() {
     const ticker = document.getElementById('liveStaffTicker');
     if (!ticker) return;
     ticker.innerHTML = '';
     staffList.forEach(p => {
       const st = staffStatusMap[p] || 'Available';
-      let cls = 'pill-avail';
-      if (st === 'Lunch Break' || st === 'In Meeting') cls = 'pill-break';
-      else if (st === 'On Leave') cls = 'pill-leave';
-      ticker.innerHTML += `<span class="status-pill ${cls}">● ${p}: <b>${st}</b></span>`;
+      let dotClass = 'dot-avail';
+      let colorStyle = 'color: var(--green);';
+      if (st === 'Lunch Break' || st === 'In Meeting') {
+        dotClass = 'dot-break';
+        colorStyle = 'color: var(--amber);';
+      } else if (st === 'On Leave') {
+        dotClass = 'dot-leave';
+        colorStyle = 'color: var(--crimson);';
+      }
+
+      ticker.innerHTML += `
+        <div class="roster-item">
+          <span>${p}</span>
+          <span style="${colorStyle}"><span class="status-dot ${dotClass}"></span>${st}</span>
+        </div>
+      `;
     });
   }
 
@@ -498,7 +533,6 @@
     renderNoticeWidget();
   }
 
-  // Informative alert; does NOT block submission
   function checkStaffStatus(selectId, alertBoxId) {
     const staff = document.getElementById(selectId).value;
     const alertBox = document.getElementById(alertBoxId);
@@ -512,7 +546,7 @@
       alertBox.style.background = '#fef3c7';
       alertBox.style.border = '1px solid #fde68a';
       alertBox.style.color = '#92400e';
-      alertBox.innerHTML = `<strong>Note:</strong> ${staff} is currently <strong>${state.toLowerCase()}</strong>. You may still submit your query, but there may be a delay. You can also choose another available staff member.`;
+      alertBox.innerHTML = `<strong>Note:</strong> ${staff} is currently <strong>${state.toLowerCase()}</strong>. You may still submit your query, but there may be a delay. You can also select another available staff member.`;
       alertBox.style.display = 'block';
     } else if (state === 'On Leave') {
       alertBox.style.background = '#fee2e2';
