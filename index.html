@@ -109,7 +109,6 @@
     .grid-2 { display: flex; gap: 12px; }
     .grid-2 > div { flex: 1; }
 
-    /* Right Column Widgets */
     .sidebar-column {
       display: flex;
       flex-direction: column;
@@ -123,6 +122,8 @@
       padding: 22px;
       box-sizing: border-box;
       box-shadow: 8px 8px 18px var(--shadow-dark), -8px -8px 18px var(--shadow-light);
+      height: auto;
+      overflow: visible;
     }
 
     .notice-header-badge {
@@ -140,12 +141,20 @@
       margin-bottom: 10px;
     }
 
-    /* Desk Roster Status List */
+    #sideNoticeBody {
+      font-size: 13px;
+      line-height: 1.55;
+      color: #334155;
+      word-break: break-word;
+      overflow-wrap: break-word;
+      white-space: normal;
+    }
+
     .roster-list {
       display: flex;
       flex-direction: column;
       gap: 8px;
-      margin-top: 10px;
+      margin-top: 8px;
     }
     .roster-item {
       display: flex;
@@ -217,7 +226,6 @@
 
 <div class="layout-wrapper" id="mainDeskContent" style="display:none;">
   
-  <!-- Left Side: Main Visitor Form -->
   <div class="neu-card">
     <div class="header">
       <img src="logo.png" alt="ICFAI Foundation for Higher Education" onerror="this.style.display='none'">
@@ -318,27 +326,22 @@
     </form>
   </div>
 
-  <!-- Right Side Column: Pinned Announcement & Duty Roster -->
+  <!-- Right Side Column: Pinned Announcement & Availability Status -->
   <div class="sidebar-column">
     
-    <!-- Pinned Announcement Card (Student View Only) -->
+    <!-- Pinned Announcement Widget -->
     <div id="sideNoticeContainer" class="neu-widget" style="border-left: 5px solid var(--amber); display:none;">
       <div class="notice-header-badge">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
         Official Announcement
       </div>
-      <h4 id="sideNoticeTitle" style="margin:0 0 8px 0; color:var(--primary); font-size:16px;">Notice Board</h4>
-      <div id="sideNoticeBody" style="font-size:13px; line-height:1.55; color:#334155;"></div>
+      <h4 id="sideNoticeTitle" style="margin:0 0 8px 0; color:var(--primary); font-size:16px; word-break: break-word;">Notice Board</h4>
+      <div id="sideNoticeBody"></div>
     </div>
 
-    <!-- SSD Desk Duty Roster (Live Availability) -->
+    <!-- Availability Status Widget -->
     <div class="neu-widget" style="border-left: 5px solid var(--accent);">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-        <h4 style="margin:0; color:var(--primary); font-size:15px;">SSD Desk Duty Roster</h4>
-        <span style="font-size:10px; font-weight:700; color:var(--green); background:#dcfce7; padding:2px 6px; border-radius:6px;">LIVE</span>
-      </div>
-      <p style="font-size:12px; color:#64748b; margin:0 0 10px 0;">Current staff availability status</p>
-      
+      <h4 style="margin:0 0 8px 0; color:var(--primary); font-size:15px;">Availability Status</h4>
       <div class="roster-list" id="liveStaffTicker">
         <span style="font-size:12px; color:#94a3b8;">Loading roster...</span>
       </div>
