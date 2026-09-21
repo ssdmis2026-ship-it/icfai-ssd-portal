@@ -18,6 +18,7 @@
       --crimson: #dc2626;
       --green: #16a34a;
       --amber: #d97706;
+      --purple: #7c3aed;
       --text: #1e293b;
       --subtext: #64748b;
     }
@@ -115,9 +116,16 @@
       color: #94a3b8;
     }
     .stat-val { font-size: 28px; font-weight: 800; margin-top: 6px; }
+    
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
     @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
     
+    .chart-box {
+      position: relative;
+      height: 240px;
+      width: 100%;
+    }
+
     .tag {
       background: var(--bg);
       padding: 7px 14px;
@@ -208,7 +216,7 @@
   <!-- VIEW 1: ANALYTICS -->
   <div id="analyticsSection">
     
-    <!-- Interactive Top KPI Row (Click to Inspect) -->
+    <!-- Interactive Top KPI Row -->
     <div class="kpi-row">
       <div class="neu-card kpi-interactive" style="margin-bottom:0;" onclick="openDrilldown('all', 'Total Enquiries Logged')">
         <span class="kpi-hint">VIEW ↗</span>
@@ -246,15 +254,35 @@
       </div>
     </div>
 
-    <!-- Charts Grid -->
+    <!-- Charts Grid 1: Daily Trend & Demographics -->
     <div class="grid-2" style="margin-bottom: 24px;">
       <div class="neu-card" style="margin-bottom:0;">
-        <h3 style="color:var(--primary); margin-top:0;">Daily Influx Timeline</h3>
-        <canvas id="timelineChart" height="130"></canvas>
+        <h3 style="color:var(--primary); margin:0 0 12px 0;">Daily Influx Timeline</h3>
+        <div class="chart-box">
+          <canvas id="timelineChart"></canvas>
+        </div>
       </div>
       <div class="neu-card" style="margin-bottom:0;">
-        <h3 style="color:var(--primary); margin-top:0;">Visitor Demographic Breakdown</h3>
-        <canvas id="demographicsChart"></canvas>
+        <h3 style="color:var(--primary); margin:0 0 12px 0;">Visitor Demographic Breakdown</h3>
+        <div class="chart-box">
+          <canvas id="demographicsChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Grid 2: Peak Hours Trend & Query Categories -->
+    <div class="grid-2" style="margin-bottom: 24px;">
+      <div class="neu-card" style="margin-bottom:0;">
+        <h3 style="color:var(--purple); margin:0 0 12px 0;">Peak Hours Influx (Hourly Traffic)</h3>
+        <div class="chart-box">
+          <canvas id="hourlyTrafficChart"></canvas>
+        </div>
+      </div>
+      <div class="neu-card" style="margin-bottom:0;">
+        <h3 style="color:var(--green); margin:0 0 12px 0;">Inquiry Categories Distribution</h3>
+        <div class="chart-box">
+          <canvas id="categoryDistributionChart"></canvas>
+        </div>
       </div>
     </div>
 
@@ -295,7 +323,7 @@
     </div>
   </div>
 
-  <!-- VIEW 2: MASTER OFFICE QUEUE (HEAD RESOLUTION DESK) -->
+  <!-- VIEW 2: MASTER OFFICE QUEUE -->
   <div id="masterQueueSection" style="display:none;">
     <div class="neu-card">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:15px;">
@@ -432,10 +460,10 @@
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
         <div>
           <h3 style="color:var(--primary); margin:0;">Faculty Master Directory Explorer</h3>
-          <p style="font-size:13px; color:var(--subtext); margin:4px 0 0 0;">Inspect active faculty members, add new joiners, or clear directory[cite: 14].</p>
+          <p style="font-size:13px; color:var(--subtext); margin:4px 0 0 0;">Inspect active faculty members, add new joiners, or clear directory.</p>
         </div>
         <button class="neu-btn" type="button" onclick="deleteFacultyDirectory()" style="color:var(--crimson);">
-          Delete Current Faculty List[cite: 14]
+          Delete Current Faculty List
         </button>
       </div>
 
@@ -446,17 +474,17 @@
       </div>
 
       <div style="display:flex; justify-content:space-between; align-items:center; margin:14px 0 10px 0;">
-        <span style="font-size:13px; font-weight:700;">Active Faculty Profiles: <span id="facultyCountBadge" style="color:var(--crimson);">0</span>[cite: 14]</span>
-        <input type="text" id="facultySearchInput" oninput="filterFacultyTable()" placeholder="Search faculty name..." class="neu-inset" style="max-width:280px; padding:8px 12px;">[cite: 14]
+        <span style="font-size:13px; font-weight:700;">Active Faculty Profiles: <span id="facultyCountBadge" style="color:var(--crimson);">0</span></span>
+        <input type="text" id="facultySearchInput" oninput="filterFacultyTable()" placeholder="Search faculty name..." class="neu-inset" style="max-width:280px; padding:8px 12px;">
       </div>
 
       <div style="max-height: 240px; overflow-y:auto; border: 1px solid #cbd5e1; border-radius:12px;">
         <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;">
           <thead style="background:#f1f5f9; position:sticky; top:0;">
             <tr style="border-bottom: 2px solid #cbd5e1; color:var(--subtext);">
-              <th style="padding:8px 12px;">#</th>[cite: 14]
-              <th style="padding:8px 12px;">Faculty Name</th>[cite: 14]
-              <th style="padding:8px 12px; text-align:right;">Action</th>[cite: 14]
+              <th style="padding:8px 12px;">#</th>
+              <th style="padding:8px 12px;">Faculty Name</th>
+              <th style="padding:8px 12px; text-align:right;">Action</th>
             </tr>
           </thead>
           <tbody id="facultyTableBody">
@@ -527,6 +555,26 @@
   </div>
 </div>
 
+<!-- Clean Reassignment Modal (Replaces Browser Prompt) -->
+<div id="headReassignModal" class="modal-overlay" style="display:none;">
+  <div class="neu-card" style="max-width: 440px; width: 100%;">
+    <h3 style="color:var(--primary); margin-top:0;">Reassign Desk</h3>
+    <p style="font-size:13px; color:var(--subtext); margin-bottom:15px;">
+      Select the target SSD staff member to transfer this active enquiry to:
+    </p>
+
+    <input type="hidden" id="headReassignDocId">
+    
+    <label style="font-size:13px; font-weight:600;">Target Staff Member:</label>
+    <select id="headReassignTargetSelect" class="neu-inset" style="margin-top:6px; margin-bottom:16px;"></select>
+
+    <div style="display:flex; gap:10px;">
+      <button class="neu-btn" style="flex:1; color:var(--accent);" onclick="confirmHeadReassign()">Confirm Reassignment</button>
+      <button class="neu-btn" style="flex:1;" onclick="closeHeadReassignModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script>
   const firebaseConfig = {
     apiKey: "AIzaSyDv4W1ZgAC4r8Zo6v65qu0EEy6ea9O1lYk",
@@ -544,8 +592,11 @@
   let currentStaffList = [];
   let activeStudentList = {};
   let activeFacultyList = [];
+  
   let timelineChartInstance = null;
   let demographicsChartInstance = null;
+  let hourlyTrafficChartInstance = null;
+  let categoryChartInstance = null;
 
   db.collection('security').doc('head').onSnapshot(doc => {
     if (doc.exists && doc.data().password) {
@@ -707,6 +758,9 @@
     let studentWords = {};
     let facultyWords = {};
     let dailyTimeline = {};
+    let hourlyTraffic = { "09:00": 0, "10:00": 0, "11:00": 0, "12:00": 0, "13:00": 0, "14:00": 0, "15:00": 0, "16:00": 0, "17:00": 0 };
+    let categoryCounts = { "Exams & Timetable": 0, "Fee & Clearance": 0, "Certificates & ID": 0, "Academics & Sections": 0, "General / Other": 0 };
+
     const stopWords = ["this", "that", "have", "from", "with", "what", "some", "please", "regarding", "about", "want", "need", "issue", "help", "detail", "details", "there", "query", "queries"];
 
     snapshot.forEach(doc => {
@@ -716,7 +770,6 @@
 
       if (d.status === 'Resolved') {
         resolved++;
-        // Outlier guard: Exclude legacy test sessions > 180 mins so average TAT is realistic
         if (d.handlingDurationMinutes && d.handlingDurationMinutes > 0 && d.handlingDurationMinutes <= 180) {
           totalTATMinutes += d.handlingDurationMinutes;
           resolvedWithTATCount++;
@@ -747,6 +800,29 @@
 
       const dateKey = d.createdDate ? d.createdDate.substring(0, 10) : new Date().toISOString().substring(0, 10);
       dailyTimeline[dateKey] = (dailyTimeline[dateKey] || 0) + 1;
+
+      // Hourly Peak Tracking
+      if (d.createdDate) {
+        const h = new Date(d.createdDate).getHours();
+        const slot = (h < 10 ? '0' + h : String(h)) + ':00';
+        if (hourlyTraffic[slot] !== undefined) {
+          hourlyTraffic[slot]++;
+        }
+      }
+
+      // Category Classification
+      const q = (d.query || '').toLowerCase();
+      if (q.includes('exam') || q.includes('timetable') || q.includes('schedule') || q.includes('hall')) {
+        categoryCounts["Exams & Timetable"]++;
+      } else if (q.includes('fee') || q.includes('clearance') || q.includes('dues') || q.includes('receipt')) {
+        categoryCounts["Fee & Clearance"]++;
+      } else if (q.includes('cert') || q.includes('id') || q.includes('card') || q.includes('bonafide')) {
+        categoryCounts["Certificates & ID"]++;
+      } else if (q.includes('section') || q.includes('sem') || q.includes('subject') || q.includes('elective')) {
+        categoryCounts["Academics & Sections"]++;
+      } else {
+        categoryCounts["General / Other"]++;
+      }
     });
 
     const total = masterRecords.length;
@@ -761,13 +837,12 @@
     document.getElementById('kpiTAT').innerText = avgTAT;
 
     renderStaffTable(staffStats);
-    renderCharts(dailyTimeline, students, faculty, general);
+    renderAllCharts(dailyTimeline, students, faculty, general, hourlyTraffic, categoryCounts);
     renderKeywordStream('studentKeywords', studentWords, 'var(--accent)');
     renderKeywordStream('facultyKeywords', facultyWords, 'var(--crimson)');
     renderMasterQueue();
   });
 
-  // KPI Drill-Down Modal Logic
   function openDrilldown(type, title) {
     const modal = document.getElementById('drilldownModal');
     document.getElementById('drilldownTitle').innerText = title;
@@ -808,7 +883,6 @@
     document.getElementById('drilldownModal').style.display = 'none';
   }
 
-  // Master Head Control Queue
   function renderMasterQueue() {
     const container = document.getElementById('masterQueueCardsContainer');
     if (!container) return;
@@ -847,7 +921,7 @@
           <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
             <input type="text" id="headRemark_${d.docId}" class="neu-inset" placeholder="Direct SSD Head Resolution remarks..." style="flex:2; min-width:200px; padding:10px 14px;">
             <button class="neu-btn" style="color:var(--green); padding:10px 16px; font-size:13px;" onclick="headDirectResolve('${d.docId}')">Direct Resolve</button>
-            <button class="neu-btn" style="color:var(--accent); padding:10px 16px; font-size:13px;" onclick="headReassignPrompt('${d.docId}')">Reassign Desk</button>
+            <button class="neu-btn" style="color:var(--accent); padding:10px 16px; font-size:13px;" onclick="openHeadReassignModal('${d.docId}')">Reassign Desk</button>
           </div>
         </div>
       `;
@@ -867,14 +941,33 @@
     alert("Inquiry marked resolved by SSD Head.");
   }
 
-  async function headReassignPrompt(docId) {
-    const target = prompt("Enter target staff name to reassign this enquiry to (e.g. Person 1, Person 2):");
-    if (!target) return;
+  // Clean Reassign Modal Functions (No prompt)
+  function openHeadReassignModal(docId) {
+    document.getElementById('headReassignDocId').value = docId;
+    const sel = document.getElementById('headReassignTargetSelect');
+    sel.innerHTML = '';
+    currentStaffList.forEach(s => {
+      sel.innerHTML += `<option value="${s}">${s}</option>`;
+    });
+    document.getElementById('headReassignModal').style.display = 'flex';
+  }
+
+  function closeHeadReassignModal() {
+    document.getElementById('headReassignModal').style.display = 'none';
+  }
+
+  async function confirmHeadReassign() {
+    const docId = document.getElementById('headReassignDocId').value;
+    const target = document.getElementById('headReassignTargetSelect').value;
+    if (!target) return alert("Select staff member.");
+
     await db.collection('enquiries').doc(docId).update({
-      assignedStaff: target.trim(),
+      assignedStaff: target,
       transferredFrom: 'SSD Head Intervention',
       transferredDate: new Date().toISOString()
     });
+
+    closeHeadReassignModal();
     alert(`Enquiry reassigned to ${target}.`);
   }
 
@@ -920,7 +1013,7 @@
     db.collection('settings').doc('staffList').set({ names: currentStaffList });
   }
 
-  // Directory Listeners & Explorers
+  // Directory Handlers
   db.collection('directory').doc('master').onSnapshot(doc => {
     if (doc.exists) {
       const d = doc.data();
@@ -1005,7 +1098,6 @@
     renderFacultyTable(document.getElementById('facultySearchInput').value.trim());
   }
 
-  // Add Specific Single Faculty Member
   function addSingleFaculty() {
     const name = document.getElementById('newSingleFacultyInput').value.trim();
     if (!name) return alert("Please enter the faculty member's name.");
@@ -1160,7 +1252,8 @@
     });
   }
 
-  function renderCharts(trends, studentCount, facultyCount, generalCount) {
+  function renderAllCharts(trends, studentCount, facultyCount, generalCount, hourlyTraffic, categoryCounts) {
+    // 1. Timeline
     const dates = Object.keys(trends).sort();
     const counts = dates.map(d => trends[d]);
 
@@ -1178,9 +1271,14 @@
           tension: 0.3
         }]
       },
-      options: { responsive: true, plugins: { legend: { display: false } } }
+      options: { 
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } }
+      }
     });
 
+    // 2. Demographics Doughnut
     if (demographicsChartInstance) demographicsChartInstance.destroy();
     demographicsChartInstance = new Chart(document.getElementById('demographicsChart'), {
       type: 'doughnut',
@@ -1191,7 +1289,59 @@
           backgroundColor: ['#2563eb', '#dc2626', '#475569']
         }]
       },
-      options: { responsive: true }
+      options: { 
+        responsive: true,
+        maintainAspectRatio: false
+      }
+    });
+
+    // 3. Hourly Traffic Bar Chart
+    const hours = Object.keys(hourlyTraffic);
+    const hourlyValues = hours.map(h => hourlyTraffic[h]);
+
+    if (hourlyTrafficChartInstance) hourlyTrafficChartInstance.destroy();
+    hourlyTrafficChartInstance = new Chart(document.getElementById('hourlyTrafficChart'), {
+      type: 'bar',
+      data: {
+        labels: hours,
+        datasets: [{
+          label: 'Visitors per Hour',
+          data: hourlyValues,
+          backgroundColor: '#7c3aed',
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+      }
+    });
+
+    // 4. Query Category Distribution Horizontal Bar
+    const categories = Object.keys(categoryCounts);
+    const categoryValues = categories.map(c => categoryCounts[c]);
+
+    if (categoryChartInstance) categoryChartInstance.destroy();
+    categoryChartInstance = new Chart(document.getElementById('categoryDistributionChart'), {
+      type: 'bar',
+      data: {
+        labels: categories,
+        datasets: [{
+          label: 'Queries',
+          data: categoryValues,
+          backgroundColor: '#16a34a',
+          borderRadius: 6
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+      }
     });
   }
 
