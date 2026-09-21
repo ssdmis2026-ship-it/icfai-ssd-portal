@@ -119,18 +119,60 @@
       box-shadow: 3px 3px 7px var(--dark-shadow), -3px -3px 7px var(--light-shadow);
       margin: 6px;
     }
+
+    #headAuthOverlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--bg);
+      z-index: 9999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .head-gate-box {
+      background: var(--bg);
+      border-radius: 24px;
+      box-shadow: 12px 12px 24px var(--dark-shadow), -12px -12px 24px var(--light-shadow);
+      padding: 35px 30px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      box-sizing: border-box;
+    }
   </style>
 </head>
 <body>
 
-<div style="max-width: 1280px; margin: auto;">
+<!-- SSD Head Master Gate -->
+<div id="headAuthOverlay">
+  <div class="head-gate-box">
+    <img src="logo.png" alt="Logo" style="max-height:48px; margin-bottom:12px;" onerror="this.style.display='none'">
+    <h3 style="color:var(--primary); margin:0 0 6px 0;">Executive Analytics Portal</h3>
+    <p style="font-size:13px; color:#64748b; margin-top:0;">Department Head Authorization Required</p>
+
+    <input type="password" id="headPasswordInput" class="neu-inset" placeholder="Enter SSD Head Password" style="margin-top:10px;">
+    
+    <div style="display:flex; justify-content:space-between; align-items:center; margin:12px 0;">
+      <span id="headAuthErr" style="color:var(--crimson); font-size:13px; display:none;">Invalid credentials</span>
+      <a href="javascript:void(0)" onclick="triggerHeadForgotPassword()" style="font-size:12px; color:var(--accent); text-decoration:none; margin-left:auto;">Forgot Password?</a>
+    </div>
+
+    <button type="button" class="neu-btn" style="width:100%;" onclick="validateHeadLogin()">Access Portal</button>
+  </div>
+</div>
+
+<div id="executiveContentWrapper" style="display:none; max-width: 1280px; margin: auto;">
   
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; flex-wrap:wrap; gap:15px;">
     <div>
       <h2 style="color:var(--primary); margin:0;">SSD Executive Portal</h2>
       <p style="color:var(--subtext); font-size:13px; margin:4px 0 0 0;">TAT Intelligence, Repeat Visitor Analysis & Master Administration</p>
     </div>
-    <button class="neu-btn" type="button" onclick="exportMasterCSV()">Download Full Report (CSV)</button>
+    <div style="display:flex; gap:10px;">
+      <button class="neu-btn" type="button" onclick="exportMasterCSV()">Download Full Report (CSV)</button>
+      <button class="neu-btn" type="button" onclick="location.reload()">Lock Session</button>
+    </div>
   </div>
 
   <div class="nav-tabs">
@@ -140,7 +182,6 @@
 
   <!-- VIEW 1: ANALYTICS -->
   <div id="analyticsSection">
-    
     <div class="kpi-row">
       <div class="neu-card" style="margin-bottom:0;">
         <span style="font-size:12px; font-weight:700; color:var(--subtext);">TOTAL INQUIRIES</span>
@@ -217,6 +258,42 @@
   <!-- VIEW 2: MASTER SETTINGS -->
   <div id="settingsSection" style="display:none;">
     
+    <!-- Security & Password Control Panel -->
+    <div class="neu-card">
+      <h3 style="color:var(--primary); margin-top:0;">Portal Security & Password Administration</h3>
+      <p style="font-size:13px; color:var(--subtext);">Manage front desk authentication PINs and department head access.</p>
+
+      <div class="grid-2">
+        <div style="background:#f8fafc; padding:18px; border-radius:14px;">
+          <h4 style="margin:0 0 6px 0; color:var(--primary);">Front Desk Kiosk Daily Access PIN</h4>
+          <p style="font-size:12px; color:var(--subtext); margin-bottom:12px;">The daily device unlock PIN required by student kiosk tablets.</p>
+          <input type="text" id="frontDeskPinSetting" class="neu-inset" placeholder="e.g. 2026">
+          <button class="neu-btn" type="button" onclick="saveFrontDeskPin()" style="margin-top:10px; width:100%;">Update Kiosk PIN</button>
+        </div>
+
+        <div style="background:#f8fafc; padding:18px; border-radius:14px;">
+          <h4 style="margin:0 0 6px 0; color:var(--primary);">SSD Head Master Password</h4>
+          <p style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Controls access to this Executive Portal and Settings.</p>
+          <input type="password" id="headNewPasswordInput" class="neu-inset" placeholder="Enter New Password">
+          <button class="neu-btn" type="button" onclick="saveHeadMasterPassword()" style="margin-top:10px; width:100%;">Update Master Password</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Staff Password Reset Approvals Hub -->
+    <div class="neu-card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="color:var(--crimson); margin:0;">Staff Password Reset Requests</h3>
+        <span id="pendingApprovalBadge" style="background:#fee2e2; color:var(--crimson); padding:4px 10px; border-radius:12px; font-weight:700; font-size:12px;">0 Pending</span>
+      </div>
+      <p style="font-size:13px; color:var(--subtext); margin-top:6px;">Review staff requests to change their workstation passwords.</p>
+      
+      <div id="resetRequestsList" style="margin-top:14px;">
+        <p style="color:#94a3b8; font-size:13px;">No pending password change requests.</p>
+      </div>
+    </div>
+
+    <!-- Announcement Broadcast -->
     <div class="neu-card">
       <h3 style="color:var(--primary); margin-top:0;">Entrance Desk Announcement Widget</h3>
       <p style="font-size:13px; color:var(--subtext);">Pinned exclusively to the student visit screen.</p>
@@ -242,6 +319,7 @@
       </button>
     </div>
 
+    <!-- Staff Identity Configuration -->
     <div class="neu-card">
       <h3 style="color:var(--primary); margin-top:0;">SSD Staff Profile Management</h3>
       <p style="font-size:13px; color:var(--subtext);">Add or remove staff desks. Synchronizes immediately with all terminals.</p>
@@ -370,12 +448,121 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
+  let masterHeadPassword = "admin";
   let masterRecords = [];
   let currentStaffList = [];
   let activeStudentList = {};
   let activeFacultyList = [];
   let timelineChartInstance = null;
   let demographicsChartInstance = null;
+
+  // 1. SSD Head Security Handshake
+  db.collection('security').doc('head').onSnapshot(doc => {
+    if (doc.exists && doc.data().password) {
+      masterHeadPassword = doc.data().password;
+    }
+  });
+
+  db.collection('security').doc('kiosk').onSnapshot(doc => {
+    if (doc.exists && doc.data().pin) {
+      document.getElementById('frontDeskPinSetting').value = doc.data().pin;
+    }
+  });
+
+  function validateHeadLogin() {
+    const input = document.getElementById('headPasswordInput').value.trim();
+    const errBox = document.getElementById('headAuthErr');
+    if (input === masterHeadPassword) {
+      document.getElementById('headAuthOverlay').style.display = 'none';
+      document.getElementById('executiveContentWrapper').style.display = 'block';
+      errBox.style.display = 'none';
+    } else {
+      errBox.style.display = 'block';
+    }
+  }
+
+  function triggerHeadForgotPassword() {
+    const secCode = prompt("Enter Recovery Security Key (Provided during project initialization):");
+    if (secCode === "ICFAI@2026") {
+      const newP = prompt("Security key verified. Enter new SSD Head Master Password:");
+      if (newP && newP.trim().length >= 4) {
+        db.collection('security').doc('head').set({ password: newP.trim() }).then(() => {
+          alert("Master password updated successfully. Please log in with your new password.");
+        });
+      }
+    } else if (secCode !== null) {
+      alert("Invalid recovery security key. Access denied.");
+    }
+  }
+
+  function saveFrontDeskPin() {
+    const pin = document.getElementById('frontDeskPinSetting').value.trim();
+    if (!pin) return alert("PIN cannot be blank.");
+    db.collection('security').doc('kiosk').set({ pin: pin }, { merge: true })
+      .then(() => alert("Front desk kiosk daily PIN updated to: " + pin));
+  }
+
+  function saveHeadMasterPassword() {
+    const p = document.getElementById('headNewPasswordInput').value.trim();
+    if (p.length < 4) return alert("Password must be at least 4 characters long.");
+    db.collection('security').doc('head').set({ password: p }, { merge: true })
+      .then(() => {
+        document.getElementById('headNewPasswordInput').value = '';
+        alert("SSD Head Master Password successfully updated.");
+      });
+  }
+
+  // 2. Staff Password Reset Requests Listener
+  db.collection('passwordResetRequests').where('status', '==', 'Pending Approval').onSnapshot(snap => {
+    const container = document.getElementById('resetRequestsList');
+    const badge = document.getElementById('pendingApprovalBadge');
+    badge.innerText = snap.size + " Pending";
+    container.innerHTML = '';
+
+    if (snap.empty) {
+      container.innerHTML = '<p style="color:#94a3b8; font-size:13px;">No pending password change requests.</p>';
+      return;
+    }
+
+    snap.forEach(doc => {
+      const d = doc.data();
+      const id = doc.id;
+      container.innerHTML += `
+        <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:12px; padding:12px 16px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div>
+            <b>${d.staffName}</b> has requested to change their desk password.
+            <div style="font-size:12px; color:var(--subtext); margin-top:2px;">Requested: ${new Date(d.requestDate).toLocaleTimeString()}</div>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="neu-btn" style="color:var(--green); padding:6px 14px; font-size:12px;" onclick="approvePasswordChange('${id}', '${d.staffName}', '${d.requestedNewPassword}')">Approve</button>
+            <button class="neu-btn" style="color:var(--crimson); padding:6px 14px; font-size:12px;" onclick="rejectPasswordChange('${id}')">Reject</button>
+          </div>
+        </div>
+      `;
+    });
+  });
+
+  async function approvePasswordChange(docId, staffName, newPassword) {
+    if (!confirm(`Approve password change for ${staffName}?`)) return;
+    await db.collection('staffSecurity').doc(staffName).set({
+      password: newPassword,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+
+    await db.collection('passwordResetRequests').doc(docId).update({
+      status: 'Approved',
+      approvedDate: new Date().toISOString()
+    });
+    alert(`Password for ${staffName} has been updated.`);
+  }
+
+  async function rejectPasswordChange(docId) {
+    if (!confirm("Reject this password change request?")) return;
+    await db.collection('passwordResetRequests').doc(docId).update({
+      status: 'Rejected',
+      rejectedDate: new Date().toISOString()
+    });
+  }
 
   function switchMainTab(tab) {
     document.getElementById('analyticsSection').style.display = tab === 'analytics' ? 'block' : 'none';
