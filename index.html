@@ -108,6 +108,8 @@
     .neu-btn:active { box-shadow: inset 4px 4px 7px var(--shadow-dark), inset -4px -4px 7px var(--shadow-light); }
     .grid-2 { display: flex; gap: 12px; }
     .grid-2 > div { flex: 1; }
+    .grid-3 { display: flex; gap: 10px; }
+    .grid-3 > div { flex: 1; }
 
     .sidebar-column {
       display: flex;
@@ -121,7 +123,7 @@
       border-radius: 20px;
       padding: 22px;
       box-sizing: border-box;
-      box-shadow: 8px 8px 18px var(--shadow-dark), -8px -8px 18px var(--shadow-light);
+      box-shadow: 8px 8px 18px var(--shadow-dark), -8px -8px 18px var(--light-shadow);
       height: auto;
       overflow: visible;
     }
@@ -211,7 +213,7 @@
 </head>
 <body>
 
-<!-- Kiosk Daily Authentication Gate -->
+<!-- Kiosk Daily Device Unlock Gate -->
 <div id="kioskGateOverlay" style="display:none;">
   <div class="gate-box">
     <img src="logo.png" alt="Logo" style="max-height:48px; margin-bottom:12px;" onerror="this.style.display='none'">
@@ -239,18 +241,22 @@
       <button class="tab-btn" id="tabGeneral" type="button" onclick="switchTab('general')">General Enquiry</button>
     </div>
 
-    <!-- 1. Student Form -->
+    <!-- 1. Student Form (Includes Program / Course & Self-Entry Section) -->
     <form id="studentForm">
       <label style="font-size:13px; font-weight:600;">Enrollment Number</label>
-      <input type="text" id="stuEnroll" class="neu-input" placeholder="Type enrollment no..." oninput="lookupStudent()" required>
+      <input type="text" id="stuEnroll" class="neu-input" placeholder="e.g. 26BSOCBL0001" oninput="lookupStudent()" required>
 
       <label style="font-size:13px; font-weight:600;">Full Name</label>
       <input type="text" id="stuName" class="neu-input" placeholder="Auto-populated / Editable" required>
 
-      <div class="grid-2">
+      <div class="grid-3">
+        <div>
+          <label style="font-size:13px; font-weight:600;">Course / Degree</label>
+          <input type="text" id="stuCourse" class="neu-input" placeholder="e.g. MBA, BCA, BBA LLB">
+        </div>
         <div>
           <label style="font-size:13px; font-weight:600;">Section</label>
-          <input type="text" id="stuSec" class="neu-input" placeholder="e.g. A">
+          <input type="text" id="stuSec" class="neu-input" placeholder="e.g. A (Enter if N/A)">
         </div>
         <div>
           <label style="font-size:13px; font-weight:600;">Semester</label>
@@ -326,10 +332,9 @@
     </form>
   </div>
 
-  <!-- Right Side Column: Pinned Announcement & Availability Status -->
+  <!-- Right Side Column: Announcement & Availability Status -->
   <div class="sidebar-column">
     
-    <!-- Pinned Announcement Widget -->
     <div id="sideNoticeContainer" class="neu-widget" style="border-left: 5px solid var(--amber); display:none;">
       <div class="notice-header-badge">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
@@ -339,7 +344,6 @@
       <div id="sideNoticeBody"></div>
     </div>
 
-    <!-- Availability Status Widget -->
     <div class="neu-widget" style="border-left: 5px solid var(--accent);">
       <h4 style="margin:0 0 8px 0; color:var(--primary); font-size:15px;">Availability Status</h4>
       <div class="roster-list" id="liveStaffTicker">
@@ -407,13 +411,15 @@
 
   verifyKioskGate();
 
+  // Load fallback files if available
   fetch('Combined data Student List CSV.json').then(r => r.json()).then(data => {
     data.forEach(item => {
       if (item.Enrolno) {
         const k = String(item.Enrolno).trim().toUpperCase();
         studentMap[k] = {
           name: item.Name || '',
-          sec: item["Sem I - Section"] || '',
+          course: item.Program || item.Course || 'MBA',
+          sec: (item.Section || item["Sem I - Section"] || '').replace(/nan|n\/a|na/gi, '').trim(),
           sem: item.Semester == 1 ? "1st Sem" : (item.Semester == 3 ? "3rd Sem" : item.Semester + "th Sem")
         };
       }
@@ -433,6 +439,7 @@
     });
   }).catch(() => {});
 
+  // Real-time Firestore master directory synchronization
   db.collection('directory').doc('master').onSnapshot(doc => {
     if (doc.exists) {
       const d = doc.data();
@@ -450,6 +457,7 @@
     }
   });
 
+  // Dynamic Staff dropdowns
   db.collection('settings').doc('staffList').onSnapshot(doc => {
     staffList = (doc.exists && doc.data().names) ? doc.data().names : ["Person 1", "Person 2", "Person 3", "Person 4", "Person 5"];
     document.querySelectorAll('.staffDropdown').forEach(sel => {
@@ -566,7 +574,10 @@
     const v = document.getElementById('stuEnroll').value.trim().toUpperCase();
     if (studentMap[v]) {
       document.getElementById('stuName').value = studentMap[v].name || '';
-      document.getElementById('stuSec').value = studentMap[v].sec || '';
+      document.getElementById('stuCourse').value = studentMap[v].course || '';
+      // If Section is N/A or empty, leave it empty for student self-entry
+      const secVal = (studentMap[v].sec || '').replace(/nan|n\/a|na/gi, '').trim();
+      document.getElementById('stuSec').value = secVal;
       document.getElementById('stuSem').value = studentMap[v].sem || '';
     }
   }
@@ -592,16 +603,19 @@
 
     const enr = document.getElementById('stuEnroll').value.trim().toUpperCase();
     const name = document.getElementById('stuName').value.trim();
+    const course = document.getElementById('stuCourse').value.trim();
     const sec = document.getElementById('stuSec').value.trim();
     const sem = document.getElementById('stuSem').value.trim();
     const staff = document.getElementById('stuStaff').value;
     const query = document.getElementById('stuQuery').value.trim();
 
     try {
-      if (!studentMap[enr] || studentMap[enr].name !== name) {
-        studentMap[enr] = { name: name, sec: sec, sem: sem };
+      // Auto-update student master directory if section, course, or name was entered/changed
+      const existing = studentMap[enr];
+      if (!existing || existing.name !== name || existing.sec !== sec || existing.course !== course) {
+        studentMap[enr] = { name: name, course: course, sec: sec, sem: sem };
         db.collection('directory').doc('master').set({
-          students: { [enr]: { name: name, sec: sec, sem: sem } }
+          students: { [enr]: { name: name, course: course, sec: sec, sem: sem } }
         }, { merge: true }).catch(() => {});
       }
 
@@ -613,6 +627,7 @@
         type: 'Student',
         enrollment: enr,
         name: name,
+        course: course,
         sec: sec,
         sem: sem,
         assignedStaff: staff,
@@ -658,6 +673,7 @@
         type: 'Faculty',
         enrollment: 'FACULTY',
         name: facName,
+        course: '',
         sec: '',
         sem: '',
         assignedStaff: staff,
@@ -699,6 +715,7 @@
         name: genName,
         contact: contact,
         category: cat,
+        course: '',
         sec: '',
         sem: '',
         assignedStaff: staff,
