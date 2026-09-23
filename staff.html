@@ -23,9 +23,12 @@
       background: var(--bg);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       margin: 0;
-      padding: 30px 20px;
+      padding: 30px 20px 20px 20px;
       color: var(--text);
       min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       box-sizing: border-box;
     }
     .neu-card {
@@ -34,6 +37,8 @@
       box-shadow: 8px 8px 18px var(--dark-shadow), -8px -8px 18px var(--light-shadow);
       padding: 24px;
       margin-bottom: 24px;
+      width: 100%;
+      box-sizing: border-box;
     }
     .neu-inset {
       background: var(--bg);
@@ -183,6 +188,17 @@
       border-radius: 10px;
       margin-top: 4px;
     }
+
+    .subtle-footer {
+      width: 100%;
+      text-align: center;
+      padding: 25px 0 10px 0;
+      font-size: 12px;
+      color: #94a3b8;
+      letter-spacing: 0.4px;
+      font-weight: 500;
+      margin-top: auto;
+    }
   </style>
 </head>
 <body>
@@ -225,7 +241,7 @@
 </div>
 
 <!-- Main Desk Interface -->
-<div id="deskView" style="display:none; max-width: 1000px; margin: auto;">
+<div id="deskView" style="display:none; max-width: 1000px; width:100%; margin: auto;">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 25px; flex-wrap:wrap; gap:12px;">
     <div>
       <div style="display:flex; align-items:center; gap:12px;">
@@ -245,7 +261,6 @@
     </div>
   </div>
 
-  <!-- Interactive Top KPI Bar -->
   <div class="kpi-row">
     <div class="kpi-card" onclick="openStaffDrilldown('Student', 'Assigned Student Queries')">
       <span class="kpi-hint">VIEW ↗</span>
@@ -362,6 +377,11 @@
   </div>
 </div>
 
+<!-- Subtle Developer Credit Footer -->
+<div class="subtle-footer">
+  Designed by Ayushi Gupta • Developed by Mohith Yadav S
+</div>
+
 <script>
   const firebaseConfig = {
     apiKey: "AIzaSyDv4W1ZgAC4r8Zo6v65qu0EEy6ea9O1lYk",
@@ -396,10 +416,8 @@
     }
   }
 
-  // Pre-render immediately
   renderStaffDropdown(fullStaffList);
 
-  // Sync real-time updates from Firestore
   db.collection('settings').doc('staffList').onSnapshot(doc => {
     if (doc.exists && doc.data() && Array.isArray(doc.data().names) && doc.data().names.length > 0) {
       fullStaffList = doc.data().names;
@@ -657,7 +675,6 @@
     const canEdit = (Date.now() - createdAt) <= 3600000;
     const remainingMins = Math.max(0, Math.round((3600000 - (Date.now() - createdAt)) / 60000));
 
-    // Display program/course dynamically
     const courseText = d.course ? `<b>${d.course}</b> • ` : '';
     const sectionText = d.sec ? `Section ${d.sec}` : 'Section N/A';
     const semText = d.sem || '';
