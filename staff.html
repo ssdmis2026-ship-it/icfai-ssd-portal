@@ -77,9 +77,18 @@
       padding: 18px 20px;
       box-shadow: 6px 6px 14px var(--dark-shadow), -6px -6px 14px var(--light-shadow);
       cursor: pointer;
+      position: relative;
+      transition: transform 0.15s ease;
     }
+    .kpi-card:hover { transform: translateY(-2px); }
+    .kpi-card:active { transform: translateY(0); }
     .kpi-card .label { font-size: 12px; font-weight: 700; color: var(--subtext); }
     .kpi-card .val { font-size: 30px; font-weight: 800; margin-top: 6px; color: var(--primary); }
+    .kpi-card .kpi-hint {
+      position: absolute;
+      top: 12px; right: 12px;
+      font-size: 10px; font-weight: 700; color: #94a3b8;
+    }
     
     .tab-bar {
       display: flex;
@@ -159,7 +168,7 @@
       display: none;
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(15, 23, 42, 0.5);
+      background: rgba(15, 23, 42, 0.6);
       backdrop-filter: blur(4px);
       z-index: 100;
       justify-content: center;
@@ -186,7 +195,12 @@
   <div style="text-align:left; margin-top: 15px;">
     <label style="font-size:12px; font-weight:700; color:var(--subtext);">Select Staff Profile</label>
     <select id="staffSelect" class="neu-inset" onchange="onStaffProfileChange()">
-      <option value="">-- Synchronizing Profiles... --</option>
+      <option value="">-- Choose Profile --</option>
+      <option value="Person 1">Person 1</option>
+      <option value="Person 2">Person 2</option>
+      <option value="Person 3">Person 3</option>
+      <option value="Person 4">Person 4</option>
+      <option value="Person 5">Person 5</option>
     </select>
 
     <div id="passwordArea" style="display:none; margin-top:14px;">
@@ -231,16 +245,20 @@
     </div>
   </div>
 
+  <!-- Interactive Top KPI Bar -->
   <div class="kpi-row">
-    <div class="kpi-card" onclick="switchDeskTab('student')">
+    <div class="kpi-card" onclick="openStaffDrilldown('Student', 'Assigned Student Queries')">
+      <span class="kpi-hint">VIEW ↗</span>
       <div class="label">OPEN STUDENT QUERIES</div>
       <div class="val" id="studentCount" style="color:var(--accent);">0</div>
     </div>
-    <div class="kpi-card" id="facKpiCard" onclick="switchDeskTab('faculty')">
+    <div class="kpi-card" id="facKpiCard" onclick="openStaffDrilldown('Faculty', 'Assigned Faculty Inquiries')">
+      <span class="kpi-hint">VIEW ↗</span>
       <div class="label">OPEN FACULTY QUERIES</div>
       <div class="val" id="facultyCount" style="color:var(--crimson);">0</div>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card" onclick="openStaffDrilldown('ALL', 'All Pending Inquiries')">
+      <span class="kpi-hint">VIEW ↗</span>
       <div class="label">TOTAL PENDING</div>
       <div class="val" id="totalCount">0</div>
     </div>
@@ -319,6 +337,31 @@
   </div>
 </div>
 
+<!-- Staff Drill-Down Modal -->
+<div id="staffDrilldownModal" class="modal-overlay">
+  <div class="neu-card" style="max-width: 850px; width: 100%; max-height: 85vh; display: flex; flex-direction: column;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; border-bottom: 1px solid #cbd5e1; padding-bottom: 10px;">
+      <h3 id="staffDrilldownTitle" style="color:var(--primary); margin:0;">Inquiry Details</h3>
+      <button class="neu-btn" style="padding: 6px 14px; font-size: 13px;" onclick="closeStaffDrilldown()">Close</button>
+    </div>
+    
+    <div style="overflow-y: auto; flex: 1;">
+      <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;">
+        <thead style="background:#f1f5f9; position:sticky; top:0;">
+          <tr style="border-bottom: 2px solid #cbd5e1; color:var(--subtext);">
+            <th style="padding:10px;">Visitor Name</th>
+            <th style="padding:10px;">Course / Program</th>
+            <th style="padding:10px;">Sec / Sem</th>
+            <th style="padding:10px;">Logged Time</th>
+            <th style="padding:10px;">Query Statement</th>
+          </tr>
+        </thead>
+        <tbody id="staffDrilldownBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <script>
   const firebaseConfig = {
     apiKey: "AIzaSyDv4W1ZgAC4r8Zo6v65qu0EEy6ea9O1lYk",
@@ -332,20 +375,41 @@
   const db = firebase.firestore();
 
   let activeStaff = '';
-  let fullStaffList = [];
+  const defaultProfiles = ["Person 1", "Person 2", "Person 3", "Person 4", "Person 5"];
+  let fullStaffList = [...defaultProfiles];
   let isProfileRegistered = false;
+  let currentStaffTickets = [];
 
-  db.collection('settings').doc('staffList').onSnapshot(doc => {
-    fullStaffList = (doc.exists && doc.data().names) ? doc.data().names : ["Person 1", "Person 2", "Person 3", "Person 4", "Person 5"];
+  function renderStaffDropdown(profiles) {
     const sel = document.getElementById('staffSelect');
-    const prev = sel.value;
+    if (!sel) return;
+    const currentVal = sel.value;
     sel.innerHTML = '<option value="">-- Choose Profile --</option>';
-    fullStaffList.forEach(p => {
+    profiles.forEach(p => {
       const opt = document.createElement('option');
-      opt.value = p; opt.innerText = p;
+      opt.value = p;
+      opt.innerText = p;
       sel.appendChild(opt);
     });
-    if (prev) sel.value = prev;
+    if (currentVal && profiles.includes(currentVal)) {
+      sel.value = currentVal;
+    }
+  }
+
+  // Pre-render immediately
+  renderStaffDropdown(fullStaffList);
+
+  // Sync real-time updates from Firestore
+  db.collection('settings').doc('staffList').onSnapshot(doc => {
+    if (doc.exists && doc.data() && Array.isArray(doc.data().names) && doc.data().names.length > 0) {
+      fullStaffList = doc.data().names;
+    } else {
+      fullStaffList = [...defaultProfiles];
+    }
+    renderStaffDropdown(fullStaffList);
+  }, err => {
+    console.warn("Firestore staffList error:", err);
+    renderStaffDropdown(defaultProfiles);
   });
 
   async function onStaffProfileChange() {
@@ -362,23 +426,30 @@
       return;
     }
 
-    const doc = await db.collection('staffSecurity').doc(p).get();
-    pwdArea.style.display = 'block';
+    try {
+      const doc = await db.collection('staffSecurity').doc(p).get();
+      pwdArea.style.display = 'block';
 
-    if (!doc.exists || !doc.data().password) {
-      isProfileRegistered = false;
-      pwdLabel.innerText = "Create Your Password (First Login):";
-      confirmDiv.style.display = 'block';
-      noticeText.innerText = "New Profile Setup";
-      authBtn.innerText = "Create Password & Log In";
-      forgotLink.style.display = 'none';
-    } else {
-      isProfileRegistered = true;
+      if (!doc.exists || !doc.data() || !doc.data().password) {
+        isProfileRegistered = false;
+        pwdLabel.innerText = "Create Your Password (First Login):";
+        confirmDiv.style.display = 'block';
+        noticeText.innerText = "New Profile Setup";
+        authBtn.innerText = "Create Password & Log In";
+        forgotLink.style.display = 'none';
+      } else {
+        isProfileRegistered = true;
+        pwdLabel.innerText = "Enter Desk Password:";
+        confirmDiv.style.display = 'none';
+        noticeText.innerText = "";
+        authBtn.innerText = "Sign In to Desk";
+        forgotLink.style.display = 'inline';
+      }
+    } catch (err) {
+      console.error("Error reading credentials:", err);
+      pwdArea.style.display = 'block';
       pwdLabel.innerText = "Enter Desk Password:";
       confirmDiv.style.display = 'none';
-      noticeText.innerText = "";
-      authBtn.innerText = "Sign In to Desk";
-      forgotLink.style.display = 'inline';
     }
   }
 
@@ -389,24 +460,28 @@
     if (!p) return alert("Please select your staff profile name.");
     if (!pwd) return alert("Please enter your password.");
 
-    if (!isProfileRegistered) {
-      const repeat = document.getElementById('staffConfirmPasswordInput').value.trim();
-      if (pwd.length < 4) return alert("Password must be at least 4 characters long.");
-      if (pwd !== repeat) return alert("Passwords do not match.");
+    try {
+      if (!isProfileRegistered) {
+        const repeat = document.getElementById('staffConfirmPasswordInput').value.trim();
+        if (pwd.length < 4) return alert("Password must be at least 4 characters long.");
+        if (pwd !== repeat) return alert("Passwords do not match.");
 
-      await db.collection('staffSecurity').doc(p).set({
-        password: pwd,
-        updatedAt: new Date().toISOString()
-      });
-      alert("Password created successfully. Logging into workstation.");
-      enterWorkstation(p);
-    } else {
-      const doc = await db.collection('staffSecurity').doc(p).get();
-      if (doc.exists && doc.data().password === pwd) {
+        await db.collection('staffSecurity').doc(p).set({
+          password: pwd,
+          updatedAt: new Date().toISOString()
+        });
+        alert("Password created successfully. Logging into workstation.");
         enterWorkstation(p);
       } else {
-        alert("Incorrect password for " + p + ".");
+        const doc = await db.collection('staffSecurity').doc(p).get();
+        if (doc.exists && doc.data().password === pwd) {
+          enterWorkstation(p);
+        } else {
+          alert("Incorrect password for " + p + ".");
+        }
       }
+    } catch (err) {
+      alert("Authentication error: " + err.message);
     }
   }
 
@@ -414,19 +489,22 @@
     const p = document.getElementById('staffSelect').value;
     if (!p) return alert("Select profile first.");
     
-    const newAttempt = prompt(`Enter desired new password for ${p}:\n(This change requires SSD Head authorization before taking effect)`);
+    const newAttempt = prompt(`Enter desired new password for ${p}:\n(Requires SSD Head approval before activation)`);
     if (!newAttempt || newAttempt.trim().length < 4) {
       return alert("Password reset cancelled or too short (min 4 characters).");
     }
 
-    await db.collection('passwordResetRequests').doc(p).set({
-      staffName: p,
-      requestedNewPassword: newAttempt.trim(),
-      status: 'Pending Approval',
-      requestDate: new Date().toISOString()
-    });
-
-    alert(`Password reset request sent to the SSD Head. Once approved on the Executive Portal, your new password will be activated.`);
+    try {
+      await db.collection('passwordResetRequests').doc(p).set({
+        staffName: p,
+        requestedNewPassword: newAttempt.trim(),
+        status: 'Pending Approval',
+        requestDate: new Date().toISOString()
+      });
+      alert("Password reset request sent to the SSD Head. Once approved on the Executive Portal, your new password will be activated.");
+    } catch (err) {
+      alert("Error submitting request: " + err.message);
+    }
   }
 
   function enterWorkstation(staffName) {
@@ -436,9 +514,11 @@
     document.getElementById('staffHeader').innerText = "Workstation: " + activeStaff;
 
     db.collection('settings').doc('staffAvailability').get().then(doc => {
-      const state = (doc.exists && doc.data()[activeStaff]) || 'Available';
+      const state = (doc.exists && doc.data() && doc.data()[activeStaff]) || 'Available';
       updateStatusBadge(state);
       document.getElementById('modalStatusSelect').value = state;
+    }).catch(() => {
+      updateStatusBadge('Available');
     });
 
     listenToQueue();
@@ -473,7 +553,7 @@
     }, { merge: true }).then(() => {
       updateStatusBadge(selectedState);
       closeStatusModal();
-    });
+    }).catch(err => alert("Error: " + err.message));
   }
 
   function openTransferModal(id) {
@@ -524,14 +604,18 @@
       let facHTML = '';
       let stuCount = 0;
       let facCount = 0;
+      currentStaffTickets = [];
 
       snapshot.forEach(doc => {
         const d = doc.data();
         const id = doc.id;
+        d.id = id;
+        
         const isAssigned = (d.assignedStaff === activeStaff || d.assignedStaff === 'No Staff Available');
         const isOpen = (d.status === 'Open' || d.status === 'Open - Pending Action');
 
         if (isAssigned && isOpen) {
+          currentStaffTickets.push(d);
           if (d.type === 'Faculty') {
             facCount++;
             facHTML += renderTicketCard(id, d, true);
@@ -560,12 +644,23 @@
 
       document.getElementById('studentListContainer').innerHTML = stuHTML || '<p style="color:#94a3b8; text-align:center; padding:30px 0;">No pending student enquiries.</p>';
       document.getElementById('facultyListContainer').innerHTML = facHTML || '<p style="color:#94a3b8; text-align:center; padding:30px 0;">No pending faculty enquiries.</p>';
+    }, err => {
+      console.error("Queue listener error:", err);
     });
   }
 
   function renderTicketCard(id, d, isFaculty) {
     const timeStr = d.createdDate ? new Date(d.createdDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently';
     const isBroadcast = d.assignedStaff === 'No Staff Available';
+
+    const createdAt = d.startTimestamp || (d.createdDate ? new Date(d.createdDate).getTime() : 0);
+    const canEdit = (Date.now() - createdAt) <= 3600000;
+    const remainingMins = Math.max(0, Math.round((3600000 - (Date.now() - createdAt)) / 60000));
+
+    // Display program/course dynamically
+    const courseText = d.course ? `<b>${d.course}</b> • ` : '';
+    const sectionText = d.sec ? `Section ${d.sec}` : 'Section N/A';
+    const semText = d.sem || '';
 
     return `
       <div class="ticket-row" style="border-left-color: ${isFaculty ? 'var(--crimson)' : 'var(--accent)'}">
@@ -578,14 +673,23 @@
               ${d.transferredFrom ? `<span class="transfer-badge">Transferred from ${d.transferredFrom}</span>` : ''}
             </div>
             <div style="font-size:13px; color:var(--subtext); margin-top:4px;">
-              ${isFaculty ? 'Faculty Member' : `${d.enrollment || 'N/A'} • Section ${d.sec || 'N/A'} • ${d.sem || 'N/A'}`}
+              ${isFaculty ? 'Faculty Member' : `${courseText}${d.enrollment || 'N/A'} • ${sectionText} • ${semText}`}
             </div>
           </div>
           <span style="font-size:12px; font-weight:600; color:var(--subtext); background:#e2e8f0; padding:3px 9px; border-radius:8px;">${timeStr}</span>
         </div>
 
         <div style="background:#f1f5f9; padding:14px; border-radius:12px; margin:14px 0; font-size:14px; line-height:1.5; color:#334155;">
-          ${d.query}
+          ${canEdit ? `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size:11px; font-weight:700; color:var(--accent);">Query Editable (${remainingMins}m remaining)</span>
+              <button type="button" class="neu-btn" style="padding:4px 10px; font-size:11px;" onclick="saveQueryEdit('${id}')">Save Changes</button>
+            </div>
+            <textarea id="editQuery_${id}" class="neu-inset" style="background:#ffffff; font-size:13px;" rows="2">${d.query}</textarea>
+          ` : `
+            <div>${d.query}</div>
+            <div style="font-size:11px; color:#94a3b8; margin-top:6px;">(Locked: 1-hour editing window expired)</div>
+          `}
           ${d.transferNotes ? `<div style="margin-top:8px; padding-top:8px; border-top:1px dashed #cbd5e1; font-size:12px; color:var(--accent);"><b>Transfer Note:</b> ${d.transferNotes}</div>` : ''}
         </div>
 
@@ -604,6 +708,53 @@
         </div>
       </div>
     `;
+  }
+
+  function saveQueryEdit(id) {
+    const updated = document.getElementById('editQuery_' + id).value.trim();
+    if (!updated) return alert("Query cannot be blank.");
+    db.collection('enquiries').doc(id).update({
+      query: updated,
+      editedBy: activeStaff,
+      editedAt: new Date().toISOString()
+    }).then(() => alert("Inquiry updated successfully.")).catch(err => alert("Error: " + err.message));
+  }
+
+  function openStaffDrilldown(type, title) {
+    document.getElementById('staffDrilldownTitle').innerText = title;
+    const tbody = document.getElementById('staffDrilldownBody');
+    tbody.innerHTML = '';
+
+    let filtered = currentStaffTickets;
+    if (type === 'Student') {
+      filtered = currentStaffTickets.filter(r => r.type !== 'Faculty');
+    } else if (type === 'Faculty') {
+      filtered = currentStaffTickets.filter(r => r.type === 'Faculty');
+    }
+
+    if (!filtered.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="padding:20px; text-align:center; color:#94a3b8;">No pending inquiries in this category.</td></tr>';
+    } else {
+      filtered.forEach(r => {
+        const time = r.createdDate ? new Date(r.createdDate).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'Recently';
+        const course = r.course || (r.type === 'Faculty' ? 'Faculty' : 'General');
+        const secSem = r.type === 'Faculty' ? 'N/A' : `${r.sec || 'N/A'} • ${r.sem || 'N/A'}`;
+        tbody.innerHTML += `
+          <tr style="border-bottom:1px solid #e2e8f0;">
+            <td style="padding:10px;"><b>${r.name}</b><div style="font-size:11px; color:#64748b;">${r.enrollment || ''}</div></td>
+            <td style="padding:10px;"><b>${course}</b></td>
+            <td style="padding:10px;">${secSem}</td>
+            <td style="padding:10px;">${time}</td>
+            <td style="padding:10px; font-size:12px; max-width:260px;">${r.query}</td>
+          </tr>
+        `;
+      });
+    }
+    document.getElementById('staffDrilldownModal').style.display = 'flex';
+  }
+
+  function closeStaffDrilldown() {
+    document.getElementById('staffDrilldownModal').style.display = 'none';
   }
 
   function resolveTicket(id, startTimestamp) {
