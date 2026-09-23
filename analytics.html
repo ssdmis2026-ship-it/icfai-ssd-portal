@@ -8,7 +8,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-  <!-- SheetJS: Native in-browser Excel (.xlsx / .xls) parsing -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root {
@@ -28,8 +27,13 @@
       background: var(--bg);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       margin: 0;
-      padding: 30px 20px;
+      padding: 30px 20px 20px 20px;
       color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-sizing: border-box;
     }
     .neu-card {
       background: var(--bg);
@@ -37,6 +41,8 @@
       box-shadow: 8px 8px 18px var(--dark-shadow), -8px -8px 18px var(--light-shadow);
       padding: 24px;
       margin-bottom: 24px;
+      width: 100%;
+      box-sizing: border-box;
     }
     .neu-inset {
       background: var(--bg);
@@ -166,6 +172,17 @@
       text-align: center;
       box-sizing: border-box;
     }
+
+    .subtle-footer {
+      width: 100%;
+      text-align: center;
+      padding: 25px 0 10px 0;
+      font-size: 12px;
+      color: #94a3b8;
+      letter-spacing: 0.4px;
+      font-weight: 500;
+      margin-top: auto;
+    }
   </style>
 </head>
 <body>
@@ -189,7 +206,7 @@
 </div>
 
 <!-- Main Executive Workspace -->
-<div id="executiveContentWrapper" style="display:none; max-width: 1280px; margin: auto;">
+<div id="executiveContentWrapper" style="display:none; max-width: 1280px; width: 100%; margin: auto;">
   
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; flex-wrap:wrap; gap:15px;">
     <div>
@@ -211,7 +228,6 @@
   <!-- VIEW 1: ANALYTICS -->
   <div id="analyticsSection">
     
-    <!-- Interactive Top KPI Row -->
     <div class="kpi-row">
       <div class="neu-card kpi-interactive" style="margin-bottom:0;" onclick="openDrilldown('all', 'Total Enquiries Logged')">
         <span class="kpi-hint">VIEW ↗</span>
@@ -249,7 +265,7 @@
       </div>
     </div>
 
-    <!-- Charts Grid 1: Daily Trend & Demographics -->
+    <!-- Charts Grid 1 -->
     <div class="grid-2" style="margin-bottom: 24px;">
       <div class="neu-card" style="margin-bottom:0;">
         <h3 style="color:var(--primary); margin:0 0 12px 0;">Daily Influx Timeline</h3>
@@ -265,7 +281,7 @@
       </div>
     </div>
 
-    <!-- Charts Grid 2: Peak Hours & Categories -->
+    <!-- Charts Grid 2 -->
     <div class="grid-2" style="margin-bottom: 24px;">
       <div class="neu-card" style="margin-bottom:0;">
         <h3 style="color:var(--purple); margin:0 0 12px 0;">Peak Hours Influx (Hourly Traffic)</h3>
@@ -281,7 +297,6 @@
       </div>
     </div>
 
-    <!-- Staff Resolution & TAT Breakdown -->
     <div class="neu-card">
       <h3 style="color:var(--primary); margin-top:0;">Staff Resolution & Handling Speed (TAT) Breakdown</h3>
       <div style="overflow-x:auto;">
@@ -303,7 +318,6 @@
       </div>
     </div>
 
-    <!-- Keyword Streams -->
     <div class="grid-2">
       <div class="neu-card" style="margin-bottom:0;">
         <h3 style="color:var(--accent); margin-top:0;">Student Topics (Frequent Concerns)</h3>
@@ -341,7 +355,6 @@
   <!-- VIEW 3: MASTER SETTINGS -->
   <div id="settingsSection" style="display:none;">
     
-    <!-- Security & Password Control Panel -->
     <div class="neu-card">
       <h3 style="color:var(--primary); margin-top:0;">Portal Security & Password Administration</h3>
       <p style="font-size:13px; color:var(--subtext);">Manage front desk authentication PINs and department head access.</p>
@@ -363,7 +376,6 @@
       </div>
     </div>
 
-    <!-- Staff Password Reset Approvals Hub -->
     <div class="neu-card">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <h3 style="color:var(--crimson); margin:0;">Staff Password Reset Requests</h3>
@@ -376,7 +388,6 @@
       </div>
     </div>
 
-    <!-- Announcement Broadcast -->
     <div class="neu-card">
       <h3 style="color:var(--primary); margin-top:0;">Entrance Desk Announcement Widget</h3>
       <p style="font-size:13px; color:var(--subtext);">Pinned exclusively to the student visit screen.</p>
@@ -402,7 +413,6 @@
       </button>
     </div>
 
-    <!-- Staff Identity Configuration -->
     <div class="neu-card">
       <h3 style="color:var(--primary); margin-top:0;">SSD Staff Profile Management</h3>
       <p style="font-size:13px; color:var(--subtext);">Add or remove staff desks. Synchronizes immediately with all terminals.</p>
@@ -416,7 +426,7 @@
       <div id="staffChipContainer" style="margin-top:10px;"></div>
     </div>
 
-    <!-- Student Master Directory Explorer (With Course Display) -->
+    <!-- Student Master Directory Explorer -->
     <div class="neu-card">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
         <div>
@@ -489,7 +499,7 @@
       </div>
     </div>
 
-    <!-- Bulk Directory Upload (Supports BOTH .xlsx Excel and .csv) -->
+    <!-- Bulk Directory Upload (Excel .xlsx / .xls or CSV) -->
     <div class="neu-card">
       <h3 style="color:var(--primary); margin-top:0;">Bulk Directory Upload (Excel .xlsx / .xls or CSV)</h3>
       <p style="font-size:13px; color:var(--subtext); line-height:1.5;">
@@ -571,6 +581,11 @@
       <button class="neu-btn" style="flex:1;" onclick="closeHeadReassignModal()">Cancel</button>
     </div>
   </div>
+</div>
+
+<!-- Subtle Developer Credit Footer -->
+<div class="subtle-footer">
+  Designed by Ayushi Gupta • Developed by Mohith Yadav S
 </div>
 
 <script>
@@ -994,7 +1009,6 @@
     db.collection('settings').doc('staffList').set({ names: currentStaffList });
   }
 
-  // Directory Handlers
   db.collection('directory').doc('master').onSnapshot(doc => {
     if (doc.exists) {
       const d = doc.data();
@@ -1132,7 +1146,6 @@
     }).then(() => alert('Announcement saved and published.'));
   }
 
-  // Universal File Ingestion: Automatically parses Excel (.xlsx / .xls) OR CSV (.csv)
   function processUniversalStudentFile() {
     const file = document.getElementById('studentFileInput').files[0];
     if (!file) return alert('Select an Excel (.xlsx/.xls) or CSV file first.');
@@ -1150,7 +1163,6 @@
         }
       });
     } else {
-      // Excel Reader via SheetJS
       const reader = new FileReader();
       reader.onload = function(e) {
         try {
@@ -1167,13 +1179,11 @@
     }
   }
 
-  // Flexible Normalization Algorithm: Finds and organizes columns regardless of order or naming
   function normalizeAndUploadStudents(rows) {
     const status = document.getElementById('uploadStatusText');
     const studentMap = {};
 
     rows.forEach(row => {
-      // 1. Enrollment matching
       let enr = '';
       for (let k of Object.keys(row)) {
         const lk = k.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -1183,7 +1193,6 @@
         }
       }
 
-      // 2. Name matching
       let name = '';
       for (let k of Object.keys(row)) {
         const lk = k.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -1193,7 +1202,6 @@
         }
       }
 
-      // 3. Course / Program matching (e.g. MBA, BCA, BBA LLB)
       let course = '';
       for (let k of Object.keys(row)) {
         const lk = k.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -1203,7 +1211,6 @@
         }
       }
 
-      // 4. Section matching (Handles 'N/A', 'NA', or blanks cleanly)
       let sec = '';
       for (let k of Object.keys(row)) {
         const lk = k.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -1216,7 +1223,6 @@
         }
       }
 
-      // 5. Semester matching
       let sem = '';
       for (let k of Object.keys(row)) {
         const lk = k.toLowerCase().replace(/[^a-z0-9]/g, '');
