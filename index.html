@@ -21,11 +21,11 @@
       background: var(--bg);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       margin: 0;
-      padding: 30px 20px;
+      padding: 30px 20px 20px 20px;
       min-height: 100vh;
       display: flex;
-      justify-content: center;
-      align-items: flex-start;
+      flex-direction: column;
+      align-items: center;
       box-sizing: border-box;
     }
     .layout-wrapper {
@@ -35,7 +35,8 @@
       gap: 30px;
       width: 100%;
       max-width: 1080px;
-      margin: auto;
+      margin: 0 auto;
+      flex: 1;
     }
     @media (max-width: 900px) {
       .layout-wrapper { flex-direction: column-reverse; align-items: center; }
@@ -123,7 +124,7 @@
       border-radius: 20px;
       padding: 22px;
       box-sizing: border-box;
-      box-shadow: 8px 8px 18px var(--shadow-dark), -8px -8px 18px var(--light-shadow);
+      box-shadow: 8px 8px 18px var(--shadow-dark), -8px -8px 18px var(--shadow-light);
       height: auto;
       overflow: visible;
     }
@@ -209,6 +210,16 @@
       text-align: center;
       box-sizing: border-box;
     }
+
+    .subtle-footer {
+      width: 100%;
+      text-align: center;
+      padding: 25px 0 10px 0;
+      font-size: 12px;
+      color: #94a3b8;
+      letter-spacing: 0.4px;
+      font-weight: 500;
+    }
   </style>
 </head>
 <body>
@@ -241,7 +252,7 @@
       <button class="tab-btn" id="tabGeneral" type="button" onclick="switchTab('general')">General Enquiry</button>
     </div>
 
-    <!-- 1. Student Form (Includes Program / Course & Self-Entry Section) -->
+    <!-- 1. Student Form -->
     <form id="studentForm">
       <label style="font-size:13px; font-weight:600;">Enrollment Number</label>
       <input type="text" id="stuEnroll" class="neu-input" placeholder="e.g. 26BSOCBL0001" oninput="lookupStudent()" required>
@@ -355,6 +366,11 @@
 
 </div>
 
+<!-- Subtle Developer Credit Footer -->
+<div class="subtle-footer">
+  Designed by Ayushi Gupta • Developed by Mohith Yadav S
+</div>
+
 <script>
   const firebaseConfig = {
     apiKey: "AIzaSyDv4W1ZgAC4r8Zo6v65qu0EEy6ea9O1lYk",
@@ -411,21 +427,6 @@
 
   verifyKioskGate();
 
-  // Load fallback files if available
-  fetch('Combined data Student List CSV.json').then(r => r.json()).then(data => {
-    data.forEach(item => {
-      if (item.Enrolno) {
-        const k = String(item.Enrolno).trim().toUpperCase();
-        studentMap[k] = {
-          name: item.Name || '',
-          course: item.Program || item.Course || 'MBA',
-          sec: (item.Section || item["Sem I - Section"] || '').replace(/nan|n\/a|na/gi, '').trim(),
-          sem: item.Semester == 1 ? "1st Sem" : (item.Semester == 3 ? "3rd Sem" : item.Semester + "th Sem")
-        };
-      }
-    });
-  }).catch(() => {});
-
   fetch('Faculty List.json').then(r => r.json()).then(data => {
     const dl = document.getElementById('facList');
     data.forEach(item => {
@@ -439,7 +440,6 @@
     });
   }).catch(() => {});
 
-  // Real-time Firestore master directory synchronization
   db.collection('directory').doc('master').onSnapshot(doc => {
     if (doc.exists) {
       const d = doc.data();
@@ -457,7 +457,6 @@
     }
   });
 
-  // Dynamic Staff dropdowns
   db.collection('settings').doc('staffList').onSnapshot(doc => {
     staffList = (doc.exists && doc.data().names) ? doc.data().names : ["Person 1", "Person 2", "Person 3", "Person 4", "Person 5"];
     document.querySelectorAll('.staffDropdown').forEach(sel => {
@@ -575,7 +574,6 @@
     if (studentMap[v]) {
       document.getElementById('stuName').value = studentMap[v].name || '';
       document.getElementById('stuCourse').value = studentMap[v].course || '';
-      // If Section is N/A or empty, leave it empty for student self-entry
       const secVal = (studentMap[v].sec || '').replace(/nan|n\/a|na/gi, '').trim();
       document.getElementById('stuSec').value = secVal;
       document.getElementById('stuSem').value = studentMap[v].sem || '';
@@ -610,7 +608,6 @@
     const query = document.getElementById('stuQuery').value.trim();
 
     try {
-      // Auto-update student master directory if section, course, or name was entered/changed
       const existing = studentMap[enr];
       if (!existing || existing.name !== name || existing.sec !== sec || existing.course !== course) {
         studentMap[enr] = { name: name, course: course, sec: sec, sem: sem };
