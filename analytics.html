@@ -8,6 +8,8 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <!-- SheetJS: Native in-browser Excel (.xlsx / .xls) parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root {
       --bg: #e2e8f0;
@@ -101,19 +103,12 @@
       transition: transform 0.15s ease;
       position: relative;
     }
-    .kpi-interactive:hover {
-      transform: translateY(-3px);
-    }
-    .kpi-interactive:active {
-      transform: translateY(0);
-    }
+    .kpi-interactive:hover { transform: translateY(-3px); }
+    .kpi-interactive:active { transform: translateY(0); }
     .kpi-hint {
       position: absolute;
-      top: 10px;
-      right: 12px;
-      font-size: 10px;
-      font-weight: 700;
-      color: #94a3b8;
+      top: 10px; right: 12px;
+      font-size: 10px; font-weight: 700; color: #94a3b8;
     }
     .stat-val { font-size: 28px; font-weight: 800; margin-top: 6px; }
     
@@ -270,7 +265,7 @@
       </div>
     </div>
 
-    <!-- Charts Grid 2: Peak Hours Trend & Query Categories -->
+    <!-- Charts Grid 2: Peak Hours & Categories -->
     <div class="grid-2" style="margin-bottom: 24px;">
       <div class="neu-card" style="margin-bottom:0;">
         <h3 style="color:var(--purple); margin:0 0 12px 0;">Peak Hours Influx (Hourly Traffic)</h3>
@@ -421,7 +416,7 @@
       <div id="staffChipContainer" style="margin-top:10px;"></div>
     </div>
 
-    <!-- Student Master Directory Explorer -->
+    <!-- Student Master Directory Explorer (With Course Display) -->
     <div class="neu-card">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
         <div>
@@ -435,21 +430,22 @@
 
       <div style="display:flex; justify-content:space-between; align-items:center; margin:16px 0 10px 0;">
         <span style="font-size:13px; font-weight:700;">Active Enrolled Students: <span id="studentCountBadge" style="color:var(--accent);">0</span></span>
-        <input type="text" id="studentSearchInput" oninput="filterStudentTable()" placeholder="Search student name or enrollment..." class="neu-inset" style="max-width:280px; padding:8px 12px;">
+        <input type="text" id="studentSearchInput" oninput="filterStudentTable()" placeholder="Search name, enrollment, course..." class="neu-inset" style="max-width:280px; padding:8px 12px;">
       </div>
 
-      <div style="max-height: 240px; overflow-y:auto; border: 1px solid #cbd5e1; border-radius:12px;">
+      <div style="max-height: 260px; overflow-y:auto; border: 1px solid #cbd5e1; border-radius:12px;">
         <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;">
           <thead style="background:#f1f5f9; position:sticky; top:0;">
             <tr style="border-bottom: 2px solid #cbd5e1; color:var(--subtext);">
               <th style="padding:8px 12px;">Enrollment</th>
               <th style="padding:8px 12px;">Name</th>
+              <th style="padding:8px 12px;">Course</th>
               <th style="padding:8px 12px;">Section</th>
               <th style="padding:8px 12px;">Semester</th>
             </tr>
           </thead>
           <tbody id="studentTableBody">
-            <tr><td colspan="4" style="padding:15px; text-align:center; color:#94a3b8;">Loading student records...</td></tr>
+            <tr><td colspan="5" style="padding:15px; text-align:center; color:#94a3b8;">Loading student records...</td></tr>
           </tbody>
         </table>
       </div>
@@ -467,7 +463,6 @@
         </button>
       </div>
 
-      <!-- Quick Add New Faculty Member -->
       <div style="display:flex; gap:10px; margin: 16px 0 10px 0; align-items:center; flex-wrap:wrap;">
         <input type="text" id="newSingleFacultyInput" class="neu-inset" placeholder="Add specific new faculty name (e.g. Dr. Jane Smith)" style="flex:1; min-width:250px;">
         <button class="neu-btn" type="button" onclick="addSingleFaculty()" style="color:var(--green); white-space:nowrap;">+ Add Faculty Member</button>
@@ -494,24 +489,26 @@
       </div>
     </div>
 
-    <!-- Bulk CSV Upload -->
+    <!-- Bulk Directory Upload (Supports BOTH .xlsx Excel and .csv) -->
     <div class="neu-card">
-      <h3 style="color:var(--primary); margin-top:0;">Upload New Directory Batch (Raw CSV)</h3>
-      <p style="font-size:13px; color:var(--subtext); line-height:1.5;">Upload standard Excel CSV files. Processed directly in the browser.</p>
+      <h3 style="color:var(--primary); margin-top:0;">Bulk Directory Upload (Excel .xlsx / .xls or CSV)</h3>
+      <p style="font-size:13px; color:var(--subtext); line-height:1.5;">
+        Upload standard Excel spreadsheets directly. The system automatically detects and maps columns (e.g., Program/Course, Enrolno, Section, Semester) even if ordered differently or if fields are blank.
+      </p>
 
       <div class="grid-2">
         <div style="background:#f8fafc; padding:18px; border-radius:14px;">
-          <h4 style="margin:0 0 10px 0; color:var(--accent);">Upload Student CSV</h4>
-          <p style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Columns: <code>Enrolno</code>, <code>Name</code>, <code>Sec</code>, <code>Semester</code></p>
-          <input type="file" id="studentCSVInput" accept=".csv" class="neu-inset">
-          <button class="neu-btn" type="button" onclick="processStudentCSV()" style="margin-top:12px; width:100%;">Upload & Sync Students</button>
+          <h4 style="margin:0 0 10px 0; color:var(--accent);">Upload Student Excel / CSV</h4>
+          <p style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Supports: <code>.xlsx</code>, <code>.xls</code>, <code>.csv</code></p>
+          <input type="file" id="studentFileInput" accept=".xlsx, .xls, .csv" class="neu-inset">
+          <button class="neu-btn" type="button" onclick="processUniversalStudentFile()" style="margin-top:12px; width:100%;">Upload & Sync Students</button>
         </div>
 
         <div style="background:#f8fafc; padding:18px; border-radius:14px;">
-          <h4 style="margin:0 0 10px 0; color:var(--crimson);">Upload Faculty CSV</h4>
-          <p style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Columns: <code>Faculty Name</code> or <code>Name</code></p>
-          <input type="file" id="facultyCSVInput" accept=".csv" class="neu-inset">
-          <button class="neu-btn" type="button" onclick="processFacultyCSV()" style="margin-top:12px; width:100%;">Upload & Sync Faculty</button>
+          <h4 style="margin:0 0 10px 0; color:var(--crimson);">Upload Faculty Excel / CSV</h4>
+          <p style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Supports: <code>.xlsx</code>, <code>.xls</code>, <code>.csv</code></p>
+          <input type="file" id="facultyFileInput" accept=".xlsx, .xls, .csv" class="neu-inset">
+          <button class="neu-btn" type="button" onclick="processUniversalFacultyFile()" style="margin-top:12px; width:100%;">Upload & Sync Faculty</button>
         </div>
       </div>
       <div id="uploadStatusText" style="margin-top:14px; font-size:13px; font-weight:600;"></div>
@@ -532,7 +529,7 @@
 
 <!-- Drill-down Inspection Modal -->
 <div id="drilldownModal" class="modal-overlay" style="display:none;">
-  <div class="neu-card" style="max-width: 900px; width: 100%; max-height: 85vh; display: flex; flex-direction: column;">
+  <div class="neu-card" style="max-width: 950px; width: 100%; max-height: 85vh; display: flex; flex-direction: column;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; border-bottom: 1px solid #cbd5e1; padding-bottom: 10px;">
       <h3 id="drilldownTitle" style="color:var(--primary); margin:0;">Metric Records Explorer</h3>
       <button class="neu-btn" style="padding: 6px 14px; font-size: 13px;" onclick="closeDrilldown()">Close</button>
@@ -542,11 +539,12 @@
       <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;">
         <thead style="background:#f1f5f9; position:sticky; top:0;">
           <tr style="border-bottom: 2px solid #cbd5e1; color:var(--subtext);">
-            <th style="padding:10px;">Type / Name</th>
+            <th style="padding:10px;">Name / Details</th>
+            <th style="padding:10px;">Course</th>
             <th style="padding:10px;">Enroll / Contact</th>
             <th style="padding:10px;">Assigned Staff</th>
             <th style="padding:10px;">Status</th>
-            <th style="padding:10px;">Query Details</th>
+            <th style="padding:10px;">Query</th>
           </tr>
         </thead>
         <tbody id="drilldownTableBody"></tbody>
@@ -555,7 +553,7 @@
   </div>
 </div>
 
-<!-- Clean Reassignment Modal (Replaces Browser Prompt) -->
+<!-- Reassignment Modal -->
 <div id="headReassignModal" class="modal-overlay" style="display:none;">
   <div class="neu-card" style="max-width: 440px; width: 100%;">
     <h3 style="color:var(--primary); margin-top:0;">Reassign Desk</h3>
@@ -715,22 +713,6 @@
     if (tab === 'masterqueue') renderMasterQueue();
   }
 
-  fetch('Combined data Student List CSV.json').then(r => r.json()).then(data => {
-    data.forEach(item => {
-      if (item.Enrolno) {
-        const k = String(item.Enrolno).trim().toUpperCase();
-        if (!activeStudentList[k]) {
-          activeStudentList[k] = {
-            name: item.Name || '',
-            sec: item["Sem I - Section"] || '',
-            sem: item.Semester == 1 ? "1st Sem" : (item.Semester == 3 ? "3rd Sem" : item.Semester + "th Sem")
-          };
-        }
-      }
-    });
-    renderStudentTable();
-  }).catch(() => {});
-
   fetch('Faculty List.json').then(r => r.json()).then(data => {
     data.forEach(item => {
       const n = (item["Faculty Name (Dr./Prof.)"] || "").trim();
@@ -801,16 +783,12 @@
       const dateKey = d.createdDate ? d.createdDate.substring(0, 10) : new Date().toISOString().substring(0, 10);
       dailyTimeline[dateKey] = (dailyTimeline[dateKey] || 0) + 1;
 
-      // Hourly Peak Tracking
       if (d.createdDate) {
         const h = new Date(d.createdDate).getHours();
         const slot = (h < 10 ? '0' + h : String(h)) + ':00';
-        if (hourlyTraffic[slot] !== undefined) {
-          hourlyTraffic[slot]++;
-        }
+        if (hourlyTraffic[slot] !== undefined) hourlyTraffic[slot]++;
       }
 
-      // Category Classification
       const q = (d.query || '').toLowerCase();
       if (q.includes('exam') || q.includes('timetable') || q.includes('schedule') || q.includes('hall')) {
         categoryCounts["Exams & Timetable"]++;
@@ -859,19 +837,21 @@
     }
 
     if (!filtered.length) {
-      tbody.innerHTML = '<tr><td colspan="5" style="padding:20px; text-align:center; color:#94a3b8;">No matching entries found.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="padding:20px; text-align:center; color:#94a3b8;">No matching entries found.</td></tr>';
     } else {
       filtered.forEach(r => {
         const time = r.createdDate ? new Date(r.createdDate).toLocaleDateString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : 'N/A';
         const contactOrEnroll = r.enrollment !== 'GUEST' && r.enrollment !== 'FACULTY' ? (r.enrollment || 'N/A') : (r.contact || 'N/A');
         const badgeColor = r.status === 'Resolved' ? 'color:green;' : 'color:red;';
+        const course = r.course || (r.type === 'Faculty' ? 'Faculty' : 'General');
         tbody.innerHTML += `
           <tr style="border-bottom:1px solid #e2e8f0;">
             <td style="padding:10px;"><b>${r.name || 'N/A'}</b><div style="font-size:11px; color:#64748b;">${r.type} • ${time}</div></td>
+            <td style="padding:10px;"><b>${course}</b></td>
             <td style="padding:10px;">${contactOrEnroll}</td>
             <td style="padding:10px;">${r.assignedStaff || 'Unassigned'}</td>
             <td style="padding:10px; font-weight:700; ${badgeColor}">${r.status}</td>
-            <td style="padding:10px; font-size:12px; max-width:280px;">${r.query}</td>
+            <td style="padding:10px; font-size:12px; max-width:260px;">${r.query}</td>
           </tr>
         `;
       });
@@ -902,11 +882,13 @@
 
     openEnquiries.forEach(d => {
       const timeStr = d.createdDate ? new Date(d.createdDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently';
+      const courseBadge = d.course ? `<span style="font-size:12px; font-weight:700; color:var(--primary); background:#e2e8f0; padding:2px 8px; border-radius:6px; margin-left:6px;">${d.course}</span>` : '';
       container.innerHTML += `
         <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:14px; padding:18px; margin-bottom:14px; box-shadow: 2px 2px 6px rgba(0,0,0,0.03);">
           <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
             <div>
               <b style="font-size:16px; color:var(--primary);">${d.name}</b>
+              ${courseBadge}
               <span style="font-size:12px; background:#e2e8f0; padding:2px 8px; border-radius:6px; margin-left:6px;">${d.type}</span>
               ${d.isRepeatVisitor ? '<span style="font-size:11px; background:#fee2e2; color:var(--crimson); padding:2px 6px; border-radius:6px; font-weight:700;">Repeat Visit</span>' : ''}
               <div style="font-size:12px; color:var(--subtext); margin-top:2px;">Currently Assigned: <b>${d.assignedStaff || 'Unassigned'}</b> • Logged: ${timeStr}</div>
@@ -941,7 +923,6 @@
     alert("Inquiry marked resolved by SSD Head.");
   }
 
-  // Clean Reassign Modal Functions (No prompt)
   function openHeadReassignModal(docId) {
     document.getElementById('headReassignDocId').value = docId;
     const sel = document.getElementById('headReassignTargetSelect');
@@ -1033,11 +1014,17 @@
     let filtered = keys;
     if (filterText) {
       const q = filterText.toLowerCase();
-      filtered = keys.filter(k => k.toLowerCase().includes(q) || (activeStudentList[k].name || '').toLowerCase().includes(q));
+      filtered = keys.filter(k => {
+        const s = activeStudentList[k];
+        return k.toLowerCase().includes(q) || 
+               (s.name || '').toLowerCase().includes(q) || 
+               (s.course || '').toLowerCase().includes(q) || 
+               (s.sec || '').toLowerCase().includes(q);
+      });
     }
 
     if (!filtered.length) {
-      tbody.innerHTML = '<tr><td colspan="4" style="padding:15px; text-align:center; color:#94a3b8;">No matching student records found.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" style="padding:15px; text-align:center; color:#94a3b8;">No matching student records found.</td></tr>';
       return;
     }
 
@@ -1047,7 +1034,8 @@
         <tr style="border-bottom: 1px solid #f1f5f9;">
           <td style="padding:8px 12px; font-weight:600;">${k}</td>
           <td style="padding:8px 12px;">${s.name || ''}</td>
-          <td style="padding:8px 12px;">${s.sec || ''}</td>
+          <td style="padding:8px 12px; font-weight:600; color:var(--primary);">${s.course || 'MBA'}</td>
+          <td style="padding:8px 12px;">${s.sec || '<span style="color:#94a3b8;">N/A</span>'}</td>
           <td style="padding:8px 12px;">${s.sem || ''}</td>
         </tr>
       `;
@@ -1144,55 +1132,183 @@
     }).then(() => alert('Announcement saved and published.'));
   }
 
-  function processStudentCSV() {
-    const file = document.getElementById('studentCSVInput').files[0];
-    if (!file) return alert('Select a student CSV file.');
+  // Universal File Ingestion: Automatically parses Excel (.xlsx / .xls) OR CSV (.csv)
+  function processUniversalStudentFile() {
+    const file = document.getElementById('studentFileInput').files[0];
+    if (!file) return alert('Select an Excel (.xlsx/.xls) or CSV file first.');
     const status = document.getElementById('uploadStatusText');
-    status.innerText = "Parsing student spreadsheet...";
+    status.innerText = "Analyzing and organizing file contents...";
 
-    Papa.parse(file, {
-      header: true, skipEmptyLines: true,
-      complete: function(results) {
-        const studentMap = {};
-        results.data.forEach(row => {
-          const enr = (row.Enrolno || row.enrolno || row.Enrollment || row["Enrollment Number"] || "").toString().trim().toUpperCase();
-          const name = (row.Name || row.name || row["Student Name"] || "").toString().trim();
-          const sec = (row["Sem I - Section"] || row.Sec || row.Section || row.section || "").toString().trim();
-          const sem = (row.Semester || row.sem || "").toString().trim();
-          if (enr) studentMap[enr] = { name: name, sec: sec, sem: sem ? (sem + "th Sem") : "" };
-        });
+    const fileName = file.name.toLowerCase();
 
-        db.collection('directory').doc('master').set({ students: studentMap }, { merge: true })
-          .then(() => {
-            status.innerText = `Synced ${Object.keys(studentMap).length} students.`;
-            alert(`Student directory updated (${Object.keys(studentMap).length} records).`);
-          }).catch(err => alert(err.message));
-      }
-    });
+    if (fileName.endsWith('.csv')) {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          normalizeAndUploadStudents(results.data);
+        }
+      });
+    } else {
+      // Excel Reader via SheetJS
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+          normalizeAndUploadStudents(jsonData);
+        } catch (err) {
+          alert("Excel parsing error: " + err.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
   }
 
-  function processFacultyCSV() {
-    const file = document.getElementById('facultyCSVInput').files[0];
-    if (!file) return alert('Select a faculty CSV file.');
+  // Flexible Normalization Algorithm: Finds and organizes columns regardless of order or naming
+  function normalizeAndUploadStudents(rows) {
     const status = document.getElementById('uploadStatusText');
-    status.innerText = "Parsing faculty spreadsheet...";
+    const studentMap = {};
 
-    Papa.parse(file, {
-      header: true, skipEmptyLines: true,
-      complete: function(results) {
-        const facList = [];
-        results.data.forEach(row => {
-          const n = (row["Faculty Name (Dr./Prof.)"] || row["Faculty Name"] || row.Name || row.name || "").toString().trim();
-          if (n && n !== "VF" && !facList.includes(n)) facList.push(n);
-        });
+    rows.forEach(row => {
+      // 1. Enrollment matching
+      let enr = '';
+      for (let k of Object.keys(row)) {
+        const lk = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (lk.includes('enrol') || lk.includes('roll') || lk.includes('regno') || lk === 'id') {
+          enr = String(row[k]).trim().toUpperCase();
+          break;
+        }
+      }
 
-        db.collection('directory').doc('master').set({ faculty: facList }, { merge: true })
-          .then(() => {
-            status.innerText = `Synced ${facList.length} faculty profiles.`;
-            alert(`Faculty directory updated (${facList.length} records).`);
-          }).catch(err => alert(err.message));
+      // 2. Name matching
+      let name = '';
+      for (let k of Object.keys(row)) {
+        const lk = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (lk.includes('name') && !lk.includes('faculty') && !lk.includes('staff')) {
+          name = String(row[k]).trim();
+          break;
+        }
+      }
+
+      // 3. Course / Program matching (e.g. MBA, BCA, BBA LLB)
+      let course = '';
+      for (let k of Object.keys(row)) {
+        const lk = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (lk.includes('program') || lk.includes('course') || lk.includes('degree') || lk.includes('dept') || lk.includes('branch')) {
+          course = String(row[k]).trim();
+          break;
+        }
+      }
+
+      // 4. Section matching (Handles 'N/A', 'NA', or blanks cleanly)
+      let sec = '';
+      for (let k of Object.keys(row)) {
+        const lk = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (lk.includes('section') || lk === 'sec' || lk.includes('semisection') || lk.includes('division')) {
+          const rawSec = String(row[k]).trim();
+          if (!['nan', 'n/a', 'na', 'none', ''].includes(rawSec.toLowerCase())) {
+            sec = rawSec;
+          }
+          break;
+        }
+      }
+
+      // 5. Semester matching
+      let sem = '';
+      for (let k of Object.keys(row)) {
+        const lk = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (lk.includes('sem') && !lk.includes('section')) {
+          const rawSem = String(row[k]).trim();
+          if (rawSem === '1') sem = '1st Sem';
+          else if (rawSem === '3') sem = '3rd Sem';
+          else if (rawSem && !isNaN(rawSem)) sem = rawSem + 'th Sem';
+          else sem = rawSem;
+          break;
+        }
+      }
+
+      if (enr) {
+        studentMap[enr] = {
+          name: name,
+          course: course || 'MBA',
+          sec: sec,
+          sem: sem || '1st Sem'
+        };
       }
     });
+
+    const totalParsed = Object.keys(studentMap).length;
+    if (totalParsed === 0) {
+      status.innerText = "Error: Could not identify student enrollment numbers in this file.";
+      return;
+    }
+
+    db.collection('directory').doc('master').set({ students: studentMap }, { merge: true })
+      .then(() => {
+        status.innerText = `Successfully organized and synced ${totalParsed} students (MBA, BCA, and upcoming batches).`;
+        alert(`Student directory updated: ${totalParsed} student profiles ready.`);
+      }).catch(err => alert("Firestore write error: " + err.message));
+  }
+
+  function processUniversalFacultyFile() {
+    const file = document.getElementById('facultyFileInput').files[0];
+    if (!file) return alert('Select a faculty file first.');
+    const status = document.getElementById('uploadStatusText');
+    status.innerText = "Analyzing faculty spreadsheet...";
+
+    const fileName = file.name.toLowerCase();
+
+    if (fileName.endsWith('.csv')) {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          normalizeAndUploadFaculty(results.data);
+        }
+      });
+    } else {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+          normalizeAndUploadFaculty(jsonData);
+        } catch (err) {
+          alert("Excel parsing error: " + err.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+  }
+
+  function normalizeAndUploadFaculty(rows) {
+    const status = document.getElementById('uploadStatusText');
+    const facList = [];
+
+    rows.forEach(row => {
+      let n = '';
+      for (let k of Object.keys(row)) {
+        const lk = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (lk.includes('faculty') || lk.includes('name') || lk.includes('prof') || lk.includes('doctor')) {
+          n = String(row[k]).trim();
+          break;
+        }
+      }
+      if (n && n !== "VF" && !facList.includes(n)) {
+        facList.push(n);
+      }
+    });
+
+    db.collection('directory').doc('master').set({ faculty: facList }, { merge: true })
+      .then(() => {
+        status.innerText = `Synced ${facList.length} faculty profiles.`;
+        alert(`Faculty directory updated (${facList.length} records).`);
+      }).catch(err => alert(err.message));
   }
 
   function clearTestEntries() {
@@ -1253,7 +1369,6 @@
   }
 
   function renderAllCharts(trends, studentCount, facultyCount, generalCount, hourlyTraffic, categoryCounts) {
-    // 1. Timeline
     const dates = Object.keys(trends).sort();
     const counts = dates.map(d => trends[d]);
 
@@ -1278,7 +1393,6 @@
       }
     });
 
-    // 2. Demographics Doughnut
     if (demographicsChartInstance) demographicsChartInstance.destroy();
     demographicsChartInstance = new Chart(document.getElementById('demographicsChart'), {
       type: 'doughnut',
@@ -1295,7 +1409,6 @@
       }
     });
 
-    // 3. Hourly Traffic Bar Chart
     const hours = Object.keys(hourlyTraffic);
     const hourlyValues = hours.map(h => hourlyTraffic[h]);
 
@@ -1319,7 +1432,6 @@
       }
     });
 
-    // 4. Query Category Distribution Horizontal Bar
     const categories = Object.keys(categoryCounts);
     const categoryValues = categories.map(c => categoryCounts[c]);
 
@@ -1347,10 +1459,10 @@
 
   function exportMasterCSV() {
     if (!masterRecords.length) return alert("No data available to export.");
-    let csv = "Type,Name,Enrollment/Contact,Section,Semester,Assigned Staff,Transferred From,Query,Solution Remarks,Status,Handling Duration (Mins),Repeat Visitor,Created Date\n";
+    let csv = "Type,Name,Course,Enrollment/Contact,Section,Semester,Assigned Staff,Transferred From,Query,Solution Remarks,Status,Handling Duration (Mins),Repeat Visitor,Created Date\n";
     masterRecords.forEach(r => {
       const contactOrEnroll = r.enrollment !== 'GUEST' && r.enrollment !== 'FACULTY' ? (r.enrollment || '') : (r.contact || '');
-      csv += `"${r.type || ''}","${r.name || ''}","${contactOrEnroll}","${r.sec || ''}","${r.sem || ''}","${r.assignedStaff || ''}","${r.transferredFrom || ''}","${(r.query || '').replace(/"/g, '""')}","${(r.solution || '').replace(/"/g, '""')}","${r.status || ''}","${r.handlingDurationMinutes || ''}","${r.isRepeatVisitor ? 'YES' : 'NO'}","${r.createdDate || ''}"\n`;
+      csv += `"${r.type || ''}","${r.name || ''}","${r.course || ''}","${contactOrEnroll}","${r.sec || ''}","${r.sem || ''}","${r.assignedStaff || ''}","${r.transferredFrom || ''}","${(r.query || '').replace(/"/g, '""')}","${(r.solution || '').replace(/"/g, '""')}","${r.status || ''}","${r.handlingDurationMinutes || ''}","${r.isRepeatVisitor ? 'YES' : 'NO'}","${r.createdDate || ''}"\n`;
     });
     const blob = new Blob([csv], { type: 'text/csv' });
     const link = document.createElement('a');
