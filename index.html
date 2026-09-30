@@ -55,15 +55,14 @@
       }
     }
     
-    /* Left Column: Widened to comfortably fit long staff titles on one line */
     .side-column-left {
       width: 410px;
       flex-shrink: 0;
       display: flex;
       flex-direction: column;
+      gap: 14px;
     }
     
-    /* Center Column: Form fits content naturally */
     .center-column {
       width: 530px;
       flex-shrink: 0;
@@ -71,7 +70,6 @@
       flex-direction: column;
     }
 
-    /* Right Column: Takes up available width without artificial vertical stretching */
     .side-column-right {
       flex: 1;
       min-width: 320px;
@@ -80,7 +78,6 @@
       gap: 14px;
     }
 
-    /* Adaptive cards: Never stretched artificially */
     .neu-card {
       background: var(--bg);
       border-radius: 24px;
@@ -158,7 +155,6 @@
     .grid-3 { display: flex; gap: 8px; }
     .grid-3 > div { flex: 1; }
 
-    /* Single-Line Roster Item Style */
     .roster-list {
       display: flex;
       flex-direction: column;
@@ -196,7 +192,6 @@
     .dot-leave { background: var(--crimson); }
     .dot-custom { background: var(--purple); }
 
-    /* Announcement Cards */
     .announcement-card {
       border-radius: 16px;
       padding: 14px 18px;
@@ -306,7 +301,6 @@
       text-align: center;
     }
 
-    /* Darker, larger, prominent developer credit line */
     .subtle-footer {
       width: 100%;
       text-align: center;
@@ -321,7 +315,6 @@
 </head>
 <body>
 
-<!-- Kiosk Daily Authentication Gate -->
 <div id="kioskGateOverlay" style="display:none;">
   <div class="gate-box">
     <img src="logo.png" alt="Logo" style="max-height:48px; margin-bottom:12px;" onerror="this.style.display='none'">
@@ -336,7 +329,7 @@
 
 <div class="layout-wrapper" id="mainDeskContent" style="display:none;">
   
-  <!-- LEFT COLUMN: Availability Status Roster (Single Line Fit) -->
+  <!-- LEFT COLUMN: Availability Status Roster + Priority Staff Desk Announcements -->
   <div class="side-column-left">
     <div class="neu-widget" style="border-left: 5px solid var(--accent);">
       <h4 style="margin:0 0 4px 0; color:var(--primary); font-size:14.5px;">Availability Status</h4>
@@ -344,6 +337,8 @@
         <span style="font-size:12px; color:#94a3b8;">Loading roster...</span>
       </div>
     </div>
+    <!-- Left Desk Announcements Container (Staff Notices Render Here First) -->
+    <div id="leftStaffAnnouncements" style="display:flex; flex-direction:column; gap:14px;"></div>
   </div>
 
   <!-- CENTER: Visitor Check-In Desk -->
@@ -361,7 +356,6 @@
         <button class="tab-btn" id="tabGeneral" type="button" onclick="switchTab('general')">General Enquiry</button>
       </div>
 
-      <!-- 1. Student Form -->
       <form id="studentForm">
         <label style="font-size:12px; font-weight:600;">Enrollment Number</label>
         <input type="text" id="stuEnroll" class="neu-input" placeholder="e.g. 26BSOCBL0001" oninput="lookupStudent()" required>
@@ -397,7 +391,6 @@
         <button type="submit" id="stuSubmitBtn" class="neu-btn">Submit Student Enquiry</button>
       </form>
 
-      <!-- 2. Faculty Form -->
       <form id="facultyForm" style="display:none;">
         <label style="font-size:12px; font-weight:600;">Faculty Name</label>
         <input type="text" id="facName" list="facList" class="neu-input" placeholder="Type or select faculty name..." required>
@@ -416,7 +409,6 @@
         <button type="submit" id="facSubmitBtn" class="neu-btn">Submit Faculty Enquiry</button>
       </form>
 
-      <!-- 3. General Form -->
       <form id="generalForm" style="display:none;">
         <label style="font-size:12px; font-weight:600;">Visitor / Inquirer Full Name</label>
         <input type="text" id="genName" class="neu-input" placeholder="Enter your full name" required>
@@ -453,10 +445,9 @@
     </div>
   </div>
 
-  <!-- RIGHT COLUMN: Multi-Stream Announcements -->
+  <!-- RIGHT COLUMN: Reserved for SSD Head Announcements + Spillover -->
   <div class="side-column-right" id="announcementsColumn">
     
-    <!-- 1. Common Announcement Card -->
     <div id="cardAnnCommon" class="announcement-card ann-common" style="display:none;">
       <div class="ann-badge badge-common">General Announcement</div>
       <div class="ann-title" id="annTitleCommon">Announcement</div>
@@ -465,7 +456,6 @@
       </div>
     </div>
 
-    <!-- 2. UG Announcement Card -->
     <div id="cardAnnUG" class="announcement-card ann-ug" style="display:none;">
       <div class="ann-badge badge-ug">UG Announcement (BCA / BBA LLB)</div>
       <div class="ann-title" id="annTitleUG">UG Notice</div>
@@ -474,7 +464,6 @@
       </div>
     </div>
 
-    <!-- 3. MBA Announcement Card -->
     <div id="cardAnnMBA" class="announcement-card ann-mba" style="display:none;">
       <div class="ann-badge badge-mba">MBA Announcement</div>
       <div class="ann-title" id="annTitleMBA">MBA Notice</div>
@@ -483,14 +472,13 @@
       </div>
     </div>
 
-    <!-- 4. Dynamic Staff Specific Announcements Container -->
-    <div id="staffAnnouncementsContainer" style="display:flex; flex-direction:column; gap:14px;"></div>
+    <!-- Right Side Spillover for Staff Announcements if Left Column Full -->
+    <div id="rightStaffAnnouncements" style="display:flex; flex-direction:column; gap:14px;"></div>
 
   </div>
 
 </div>
 
-<!-- Prominent Credit Footer -->
 <div class="subtle-footer">
   Designed by Ayushi Gupta • Developed by Mohith Yadav S
 </div>
@@ -637,7 +625,6 @@
     });
   }
 
-  // Institutional Multi-Stream Announcements Listener
   db.collection('settings').doc('broadcast').onSnapshot(doc => {
     if (doc.exists) {
       broadcastState = doc.data() || {};
@@ -645,22 +632,35 @@
     }
   });
 
-  // Individual Staff Custom Desk Announcements Listener
+  // Intelligent Left-Priority vs. Right Spillover Staff Notices Router
   db.collection('staffBroadcasts').onSnapshot(snap => {
-    const container = document.getElementById('staffAnnouncementsContainer');
-    if (!container) return;
-    container.innerHTML = '';
+    const leftContainer = document.getElementById('leftStaffAnnouncements');
+    const rightContainer = document.getElementById('rightStaffAnnouncements');
+    if (!leftContainer || !rightContainer) return;
+    leftContainer.innerHTML = '';
+    rightContainer.innerHTML = '';
 
+    let activeStaffNotices = [];
     snap.forEach(doc => {
       const d = doc.data();
       if (d.active && d.message) {
-        container.innerHTML += `
-          <div class="announcement-card ann-staff">
-            <div class="ann-badge badge-staff">Desk Notice: ${d.staffName || doc.id}</div>
-            <div class="ann-title">${d.title || 'Desk Announcement'}</div>
-            <div class="ann-body">${d.message}</div>
-          </div>
-        `;
+        activeStaffNotices.push({ id: doc.id, ...d });
+      }
+    });
+
+    activeStaffNotices.forEach((d, idx) => {
+      const cardHTML = `
+        <div class="announcement-card ann-staff">
+          <div class="ann-badge badge-staff">Desk Notice: ${d.staffName || d.id}</div>
+          <div class="ann-title">${d.title || 'Desk Announcement'}</div>
+          <div class="ann-body">${d.message}</div>
+        </div>
+      `;
+      // First 2 notices anchor cleanly on the LEFT under Availability Roster. Excess spills to the right.
+      if (idx < 2) {
+        leftContainer.innerHTML += cardHTML;
+      } else {
+        rightContainer.innerHTML += cardHTML;
       }
     });
   });
