@@ -98,10 +98,11 @@
       box-shadow: 4px 4px 10px var(--dark-shadow), -4px -4px 10px var(--light-shadow);
     }
     
+    /* Responsive Top KPI Grid */
     .kpi-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
       margin-bottom: 24px;
     }
     .kpi-interactive {
@@ -116,7 +117,7 @@
       top: 10px; right: 12px;
       font-size: 10px; font-weight: 700; color: #94a3b8;
     }
-    .stat-val { font-size: 28px; font-weight: 800; margin-top: 6px; }
+    .stat-val { font-size: 26px; font-weight: 800; margin-top: 6px; }
     
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
     .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
@@ -225,6 +226,39 @@
       box-sizing: border-box;
     }
 
+    /* Motion Welcome Toast */
+    #welcomeToastOverlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(6px);
+      z-index: 99999;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .welcome-card {
+      background: var(--bg);
+      border-radius: 28px;
+      box-shadow: 14px 14px 28px var(--dark-shadow), -14px -14px 28px var(--light-shadow);
+      padding: 40px 50px;
+      text-align: center;
+      max-width: 480px;
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      animation: popInBounce 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    @keyframes popInBounce {
+      0% { opacity: 0; transform: scale(0.7) translateY(20px); }
+      70% { opacity: 1; transform: scale(1.04) translateY(-4px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    @keyframes fadeOutMotion {
+      0% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(0.85) translateY(-15px); }
+    }
+
     .subtle-footer {
       width: 100%;
       text-align: center;
@@ -238,6 +272,18 @@
   </style>
 </head>
 <body>
+
+<!-- Motion Welcome Greeting Toast for SSD Head -->
+<div id="welcomeToastOverlay">
+  <div class="welcome-card" id="welcomeToastBox">
+    <div style="width:64px; height:64px; border-radius:50%; background:#dbeafe; display:flex; align-items:center; justify-content:center; margin: 0 auto 16px auto; box-shadow: inset 3px 3px 6px var(--dark-shadow), inset -3px -3px 6px var(--light-shadow);">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="#1e3a8a"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+    </div>
+    <h2 style="color:var(--primary); margin:0 0 8px 0; font-size:24px;">Welcome, Department Head!</h2>
+    <p style="font-size:16px; font-weight:700; color:var(--accent); margin:0 0 8px 0;">Executive Intelligence & Control Portal</p>
+    <div style="font-size:13px; color:var(--subtext);">Synchronizing department metrics, queues, and settings...</div>
+  </div>
+</div>
 
 <div id="headAuthOverlay">
   <div class="head-gate-box">
@@ -275,7 +321,7 @@
     <button class="nav-btn" id="tabNavSettings" onclick="switchMainTab('settings')">Master Settings & Management</button>
   </div>
 
-  <!-- VIEW 1: ANALYTICS -->
+  <!-- VIEW 1: ANALYTICS (With Unresolved Queries Banner & Elapsed Open TAT) -->
   <div id="analyticsSection">
     
     <div class="kpi-row">
@@ -299,6 +345,18 @@
         <span style="font-size:11px; font-weight:700; color:#475569;">GENERAL VISITS</span>
         <div class="stat-val" id="kpiGeneral" style="color:#475569;">0</div>
       </div>
+      <!-- NEW: UNRESOLVED / PENDING QUERIES BANNER -->
+      <div class="neu-card kpi-interactive" style="margin-bottom:0;" onclick="openDrilldown('Unresolved', 'Active / Unresolved Enquiries')">
+        <span class="kpi-hint">VIEW ↗</span>
+        <span style="font-size:11px; font-weight:700; color:var(--crimson);">UNRESOLVED QUERIES</span>
+        <div class="stat-val" id="kpiUnresolved" style="color:var(--crimson);">0</div>
+      </div>
+      <!-- NEW: TOTAL UNRESOLVED WAIT/ELAPSED TAT BANNER -->
+      <div class="neu-card kpi-interactive" style="margin-bottom:0;" onclick="openDrilldown('Unresolved', 'Unresolved Open Wait Duration')">
+        <span class="kpi-hint">VIEW ↗</span>
+        <span style="font-size:11px; font-weight:700; color:#ea580c;">AVG OPEN WAIT</span>
+        <div class="stat-val" id="kpiOpenWait" style="color:#ea580c;">0m</div>
+      </div>
       <div class="neu-card" style="margin-bottom:0;">
         <span style="font-size:11px; font-weight:700; color:var(--amber);">AVG RESOLUTION TAT</span>
         <div class="stat-val" id="kpiTAT" style="color:var(--amber);">0m</div>
@@ -315,6 +373,7 @@
       </div>
     </div>
 
+    <!-- Charts Grid 1 -->
     <div class="grid-2" style="margin-bottom: 24px;">
       <div class="neu-card" style="margin-bottom:0;">
         <h3 style="color:var(--primary); margin:0 0 12px 0;">Daily Influx Timeline</h3>
@@ -330,6 +389,7 @@
       </div>
     </div>
 
+    <!-- Charts Grid 2 -->
     <div class="grid-2" style="margin-bottom: 24px;">
       <div class="neu-card" style="margin-bottom:0;">
         <h3 style="color:var(--purple); margin:0 0 12px 0;">Peak Hours Influx (Hourly Traffic)</h3>
@@ -745,9 +805,9 @@
 
 </div>
 
-<!-- Drill-down Inspection Modal with Date Filtering & Chronological Sorting -->
+<!-- Drill-down Inspection Modal with Elapsed Time & Date Filtering -->
 <div id="drilldownModal" class="modal-overlay" style="display:none;">
-  <div class="neu-card" style="max-width: 950px; width: 100%; max-height: 85vh; display: flex; flex-direction: column;">
+  <div class="neu-card" style="max-width: 980px; width: 100%; max-height: 85vh; display: flex; flex-direction: column;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px; border-bottom: 1px solid #cbd5e1; padding-bottom: 10px; flex-wrap:wrap; gap:10px;">
       <div>
         <h3 id="drilldownTitle" style="color:var(--primary); margin:0;">Metric Records Explorer</h3>
@@ -770,7 +830,8 @@
             <th style="padding:10px;">Enroll / Contact</th>
             <th style="padding:10px;">Assigned Staff</th>
             <th style="padding:10px;">Status</th>
-            <th style="padding:10px;">Date & Time</th>
+            <th style="padding:10px;">Wait / Handling Time</th>
+            <th style="padding:10px;">Logged Date</th>
             <th style="padding:10px;">Query</th>
           </tr>
         </thead>
@@ -838,6 +899,20 @@
     document.execCommand('insertUnorderedList', false, null);
   }
 
+  function showHeadWelcomeToast() {
+    const overlay = document.getElementById('welcomeToastOverlay');
+    const box = document.getElementById('welcomeToastBox');
+    overlay.style.display = 'flex';
+
+    setTimeout(() => {
+      box.style.animation = 'fadeOutMotion 0.35s ease-out forwards';
+      setTimeout(() => {
+        overlay.style.display = 'none';
+        box.style.animation = '';
+      }, 350);
+    }, 2000);
+  }
+
   db.collection('security').doc('head').onSnapshot(doc => {
     if (doc.exists && doc.data().password) {
       masterHeadPassword = doc.data().password;
@@ -857,6 +932,7 @@
       document.getElementById('headAuthOverlay').style.display = 'none';
       document.getElementById('executiveContentWrapper').style.display = 'block';
       errBox.style.display = 'none';
+      showHeadWelcomeToast();
     } else {
       errBox.style.display = 'block';
     }
@@ -968,12 +1044,14 @@
   db.collection('enquiries').onSnapshot(snapshot => {
     masterRecords = [];
     let resolved = 0;
+    let unresolved = 0;
     let students = 0;
     let faculty = 0;
     let general = 0;
     let repeatCount = 0;
     let totalTATMinutes = 0;
     let resolvedWithTATCount = 0;
+    let totalOpenWaitMinutes = 0;
 
     let staffStats = {};
     currentStaffList.forEach(name => { staffStats[name] = { assigned: 0, resolved: 0, totalTAT: 0 }; });
@@ -986,6 +1064,7 @@
     let categoryCounts = { "Exams & Timetable": 0, "Fee & Clearance": 0, "Certificates & ID": 0, "Academics & Sections": 0, "General / Other": 0 };
 
     const stopWords = ["this", "that", "have", "from", "with", "what", "some", "please", "regarding", "about", "want", "need", "issue", "help", "detail", "details", "there", "query", "queries"];
+    const nowTime = Date.now();
 
     snapshot.forEach(doc => {
       const d = doc.data();
@@ -998,6 +1077,11 @@
           totalTATMinutes += d.handlingDurationMinutes;
           resolvedWithTATCount++;
         }
+      } else {
+        unresolved++;
+        const createdAt = d.startTimestamp || (d.createdDate ? new Date(d.createdDate).getTime() : nowTime);
+        const elapsedMins = Math.max(1, Math.round((nowTime - createdAt) / 60000));
+        totalOpenWaitMinutes += elapsedMins;
       }
 
       if (d.isRepeatVisitor) repeatCount++;
@@ -1045,7 +1129,6 @@
       }
     });
 
-    // Ensure master list is sorted descending: Newest entries at top
     masterRecords.sort((a, b) => {
       const tA = a.startTimestamp || new Date(a.createdDate).getTime() || 0;
       const tB = b.startTimestamp || new Date(b.createdDate).getTime() || 0;
@@ -1057,11 +1140,24 @@
     document.getElementById('kpiStudent').innerText = students;
     document.getElementById('kpiFaculty').innerText = faculty;
     document.getElementById('kpiGeneral').innerText = general;
+    document.getElementById('kpiUnresolved').innerText = unresolved;
     document.getElementById('kpiRepeat').innerText = repeatCount;
     document.getElementById('kpiEff').innerText = total ? Math.round((resolved / total) * 100) + '%' : '0%';
 
     const avgTAT = resolvedWithTATCount > 0 ? (totalTATMinutes / resolvedWithTATCount).toFixed(1) + 'm' : 'N/A';
     document.getElementById('kpiTAT').innerText = avgTAT;
+
+    // Elapsed Open Wait calculation formatted in Hours or Mins
+    let openWaitDisplay = '0m';
+    if (unresolved > 0) {
+      const avgWait = Math.round(totalOpenWaitMinutes / unresolved);
+      if (avgWait > 60) {
+        openWaitDisplay = (avgWait / 60).toFixed(1) + 'h';
+      } else {
+        openWaitDisplay = avgWait + 'm';
+      }
+    }
+    document.getElementById('kpiOpenWait').innerText = openWaitDisplay;
 
     renderStaffTable(staffStats);
     renderAllCharts(dailyTimeline, students, faculty, general, hourlyTraffic, categoryCounts);
@@ -1070,7 +1166,7 @@
     renderMasterQueue();
   });
 
-  // Drill-down Modal with Date Filtering & Chronological Sorting
+  // Drill-down Modal with Dynamic Date Filtering & Elapsed Wait Time
   function openDrilldown(type, title) {
     document.getElementById('drilldownTitle').innerText = title;
     document.getElementById('drilldownDateFilter').value = '';
@@ -1081,6 +1177,8 @@
       currentDrilldownRecords = masterRecords.filter(r => r.isRepeatVisitor);
     } else if (type === 'Resolved') {
       currentDrilldownRecords = masterRecords.filter(r => r.status === 'Resolved');
+    } else if (type === 'Unresolved') {
+      currentDrilldownRecords = masterRecords.filter(r => r.status !== 'Resolved');
     } else {
       currentDrilldownRecords = [...masterRecords];
     }
@@ -1092,8 +1190,8 @@
   function renderDrilldownRows(records) {
     const tbody = document.getElementById('drilldownTableBody');
     tbody.innerHTML = '';
+    const nowTime = Date.now();
 
-    // Sort Newest -> Oldest
     records.sort((a, b) => {
       const tA = a.startTimestamp || new Date(a.createdDate).getTime() || 0;
       const tB = b.startTimestamp || new Date(b.createdDate).getTime() || 0;
@@ -1103,7 +1201,7 @@
     document.getElementById('drilldownCountBadge').innerText = `Displaying ${records.length} records (Sorted Newest to Oldest)`;
 
     if (!records.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="padding:20px; text-align:center; color:#94a3b8;">No records found.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" style="padding:20px; text-align:center; color:#94a3b8;">No records found.</td></tr>';
       return;
     }
 
@@ -1115,6 +1213,17 @@
       const badgeColor = r.status === 'Resolved' ? 'color:green;' : 'color:red;';
       const course = r.course || (r.type === 'Faculty' ? 'Faculty' : 'General');
       
+      // Calculate handling duration or active elapsed wait time
+      let timeMetric = '';
+      if (r.status === 'Resolved') {
+        timeMetric = `<span style="color:var(--green); font-weight:700;">TAT: ${r.handlingDurationMinutes || 1}m</span>`;
+      } else {
+        const createdAt = r.startTimestamp || (r.createdDate ? new Date(r.createdDate).getTime() : nowTime);
+        const openMins = Math.max(1, Math.round((nowTime - createdAt) / 60000));
+        const displayWait = openMins > 60 ? (openMins / 60).toFixed(1) + 'h' : openMins + 'm';
+        timeMetric = `<span style="color:var(--crimson); font-weight:700;">Open: ${displayWait}</span>`;
+      }
+
       tbody.innerHTML += `
         <tr style="border-bottom:1px solid #e2e8f0;">
           <td style="padding:10px;"><b>${r.name || 'N/A'}</b><div style="font-size:11px; color:#64748b;">${r.type}</div></td>
@@ -1122,8 +1231,9 @@
           <td style="padding:10px;">${contactOrEnroll}</td>
           <td style="padding:10px;">${r.assignedStaff || 'Unassigned'}</td>
           <td style="padding:10px; font-weight:700; ${badgeColor}">${r.status}</td>
+          <td style="padding:10px;">${timeMetric}</td>
           <td style="padding:10px;"><b>${formattedDate}</b><div style="font-size:11px; color:#64748b;">${formattedTime}</div></td>
-          <td style="padding:10px; font-size:12px; max-width:240px;">${r.query}</td>
+          <td style="padding:10px; font-size:12px; max-width:220px;">${r.query}</td>
         </tr>
       `;
     });
@@ -1655,7 +1765,7 @@
       .then(() => {
         status.innerText = `Synced ${facList.length} faculty profiles.`;
         alert(`Faculty directory updated (${facList.length} records).`);
-      }).catch(err => alert(err.message));
+      }).catch(err => alert("Faculty update error: " + err.message));
   }
 
   function clearTestEntries() {
