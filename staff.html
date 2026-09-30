@@ -226,7 +226,6 @@
 </head>
 <body>
 
-<!-- Staff Authentication Gate -->
 <div class="neu-card" id="loginBox" style="max-width: 440px; margin: 60px auto; text-align: center;">
   <h2 style="color:var(--primary); margin-bottom: 8px;">SSD Staff Terminal</h2>
   <p style="color:var(--subtext); font-size:14px; margin-top:0;">Authenticate to access your workstation</p>
@@ -263,7 +262,6 @@
   </button>
 </div>
 
-<!-- Main Desk Interface -->
 <div id="deskView" style="display:none; max-width: 1000px; width:100%; margin: auto;">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 25px; flex-wrap:wrap; gap:12px;">
     <div>
@@ -287,7 +285,6 @@
     </div>
   </div>
 
-  <!-- Interactive Top KPI Bar -->
   <div class="kpi-row">
     <div class="kpi-card" onclick="openStaffDrilldown('Student', 'Assigned Student Queries')">
       <span class="kpi-hint">VIEW ↗</span>
@@ -338,7 +335,6 @@
   </div>
 </div>
 
-<!-- Availability Modal with Custom Status Input -->
 <div id="statusModal" class="modal-overlay">
   <div class="neu-card" style="max-width: 440px; width: 100%;">
     <h3 style="color:var(--primary); margin-top:0;">Desk Availability Settings</h3>
@@ -365,12 +361,12 @@
   </div>
 </div>
 
-<!-- Dedicated Staff Announcement Modal -->
+<!-- Dedicated Staff Announcement Modal with Full Formatting & Kiosk Capacity Check -->
 <div id="staffNoticeModal" class="modal-overlay">
   <div class="neu-card" style="max-width: 500px; width: 100%;">
     <h3 style="color:var(--teal); margin-top:0;">My Desk Announcement</h3>
     <p style="font-size:13px; color:var(--subtext); margin-bottom:14px;">
-      Publish a personal announcement card on the visitor front desk tagged with your name.
+      Publish a personal announcement card on the visitor front desk.
     </p>
 
     <div class="grid-2">
@@ -393,6 +389,8 @@
       <button type="button" class="tool-btn" onclick="execCmd('italic')"><i>I</i></button>
       <button type="button" class="tool-btn" onclick="execCmd('underline')"><u>U</u></button>
       <button type="button" class="tool-btn" onclick="execCmd('insertUnorderedList')">• Bullet</button>
+      <button type="button" class="tool-btn" onclick="execCmd('undo')">↶</button>
+      <button type="button" class="tool-btn" onclick="execCmd('redo')">↷</button>
     </div>
     <div id="staffNoticeBody" class="neu-inset" contenteditable="true" style="min-height:80px; max-height:120px; overflow-y:auto; background:#ffffff; font-size:13px;"></div>
 
@@ -403,7 +401,6 @@
   </div>
 </div>
 
-<!-- Transfer Modal -->
 <div id="transferModal" class="modal-overlay">
   <div class="neu-card" style="max-width: 440px; width: 100%;">
     <h3 style="color:var(--primary); margin-top:0;">Reassign / Transfer Ticket</h3>
@@ -423,12 +420,20 @@
   </div>
 </div>
 
-<!-- Staff Drill-Down Modal -->
+<!-- Staff Drill-Down Modal with Date Filtering & Chronological Sorting -->
 <div id="staffDrilldownModal" class="modal-overlay">
-  <div class="neu-card" style="max-width: 850px; width: 100%; max-height: 85vh; display: flex; flex-direction: column;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; border-bottom: 1px solid #cbd5e1; padding-bottom: 10px;">
-      <h3 id="staffDrilldownTitle" style="color:var(--primary); margin:0;">Inquiry Details</h3>
-      <button class="neu-btn" style="padding: 6px 14px; font-size: 13px;" onclick="closeStaffDrilldown()">Close</button>
+  <div class="neu-card" style="max-width: 900px; width: 100%; max-height: 85vh; display: flex; flex-direction: column;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px; border-bottom: 1px solid #cbd5e1; padding-bottom: 10px; flex-wrap:wrap; gap:10px;">
+      <div>
+        <h3 id="staffDrilldownTitle" style="color:var(--primary); margin:0;">Inquiry Details</h3>
+        <span id="staffDrilldownCountBadge" style="font-size:12px; color:var(--accent); font-weight:700;">Showing all recent entries</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <label style="font-size:12px; font-weight:700; color:var(--subtext);">Filter Date:</label>
+        <input type="date" id="staffDrilldownDateFilter" class="neu-inset" style="padding:6px 10px; width:auto;" onchange="applyStaffDrilldownDateFilter()">
+        <button class="neu-btn" style="padding: 6px 12px; font-size: 12px;" onclick="clearStaffDrilldownDateFilter()">Clear</button>
+        <button class="neu-btn" style="padding: 6px 14px; font-size: 13px;" onclick="closeStaffDrilldown()">Close</button>
+      </div>
     </div>
     
     <div style="overflow-y: auto; flex: 1;">
@@ -448,7 +453,6 @@
   </div>
 </div>
 
-<!-- Prominent Credit Footer -->
 <div class="subtle-footer">
   Designed by Ayushi Gupta • Developed by Mohith Yadav S
 </div>
@@ -470,6 +474,7 @@
   let fullStaffList = [...defaultProfiles];
   let isProfileRegistered = false;
   let currentStaffTickets = [];
+  let currentDrilldownCategory = 'ALL';
 
   function execCmd(command, val = null) {
     document.execCommand(command, false, val);
@@ -680,7 +685,6 @@
     }).catch(err => alert("Error: " + err.message));
   }
 
-  // Staff Desk Announcement Functions
   function openStaffNoticeModal() {
     db.collection('staffBroadcasts').doc(activeStaff).get().then(doc => {
       if (doc.exists) {
@@ -697,10 +701,33 @@
     document.getElementById('staffNoticeModal').style.display = 'none';
   }
 
-  function saveStaffNotice() {
+  // Capacity Guard: Check total active announcements before publishing to prevent kiosk overload
+  async function saveStaffNotice() {
     const active = document.getElementById('staffNoticeActive').value === 'true';
     const title = document.getElementById('staffNoticeTitle').value.trim();
     const msg = document.getElementById('staffNoticeBody').innerHTML.trim();
+
+    if (active) {
+      // Tally currently displayed cards across both Head and Staff broadcasts
+      let totalActiveCards = 0;
+      const bSnap = await db.collection('settings').doc('broadcast').get();
+      if (bSnap.exists) {
+        const bd = bSnap.data();
+        if (bd.commonActive && bd.commonMessage) totalActiveCards++;
+        if (bd.ugActive && bd.ugMessage) totalActiveCards++;
+        if (bd.mbaActive && bd.mbaMessage) totalActiveCards++;
+      }
+      const sSnap = await db.collection('staffBroadcasts').get();
+      sSnap.forEach(d => {
+        if (d.id !== activeStaff && d.data().active && d.data().message) totalActiveCards++;
+      });
+
+      // Max capacity threshold = 4 cards
+      if (totalActiveCards >= 4) {
+        alert("Front desk screen space is currently full (Maximum 4 announcements).\nPlease clear or deactivate an existing announcement before adding this one.");
+        return;
+      }
+    }
 
     db.collection('staffBroadcasts').doc(activeStaff).set({
       staffName: activeStaff,
@@ -784,6 +811,13 @@
         }
       });
 
+      // Maintain chronological order: Newest entries at the very top
+      currentStaffTickets.sort((a, b) => {
+        const tA = a.startTimestamp || new Date(a.createdDate).getTime() || 0;
+        const tB = b.startTimestamp || new Date(b.createdDate).getTime() || 0;
+        return tB - tA;
+      });
+
       document.getElementById('studentCount').innerText = stuCount;
       document.getElementById('facultyCount').innerText = facCount;
       document.getElementById('totalCount').innerText = stuCount + facCount;
@@ -830,7 +864,7 @@
               ${d.transferredFrom ? `<span class="transfer-badge">Transferred from ${d.transferredFrom}</span>` : ''}
             </div>
             <div style="font-size:13px; color:var(--subtext); margin-top:4px;">
-              ${isFaculty ? 'Faculty Member' : `${courseText}${d.enrollment || 'N/A'} • ${sectionText} •${semText}`}
+              ${isFaculty ? 'Faculty Member' : `${courseText}${d.enrollment || 'N/A'} • ${sectionText} • ${semText}`}
             </div>
           </div>
           <span style="font-size:12px; font-weight:600; color:var(--subtext); background:#e2e8f0; padding:3px 9px; border-radius:8px;">${timeStr}</span>
@@ -878,36 +912,74 @@
   }
 
   function openStaffDrilldown(type, title) {
+    currentDrilldownCategory = type;
     document.getElementById('staffDrilldownTitle').innerText = title;
+    document.getElementById('staffDrilldownDateFilter').value = '';
+    renderStaffDrilldownRows(currentStaffTickets);
+    document.getElementById('staffDrilldownModal').style.display = 'flex';
+  }
+
+  function renderStaffDrilldownRows(ticketList) {
     const tbody = document.getElementById('staffDrilldownBody');
     tbody.innerHTML = '';
 
-    let filtered = currentStaffTickets;
-    if (type === 'Student') {
-      filtered = currentStaffTickets.filter(r => r.type !== 'Faculty');
-    } else if (type === 'Faculty') {
-      filtered = currentStaffTickets.filter(r => r.type === 'Faculty');
+    let filtered = ticketList;
+    if (currentDrilldownCategory === 'Student') {
+      filtered = ticketList.filter(r => r.type !== 'Faculty');
+    } else if (currentDrilldownCategory === 'Faculty') {
+      filtered = ticketList.filter(r => r.type === 'Faculty');
     }
 
+    // Strict Date & Time Sort: Most Recent -> Next Oldest
+    filtered.sort((a, b) => {
+      const tA = a.startTimestamp || new Date(a.createdDate).getTime() || 0;
+      const tB = b.startTimestamp || new Date(b.createdDate).getTime() || 0;
+      return tB - tA;
+    });
+
+    document.getElementById('staffDrilldownCountBadge').innerText = `Displaying ${filtered.length} entries (Sorted Newest to Oldest)`;
+
     if (!filtered.length) {
-      tbody.innerHTML = '<tr><td colspan="5" style="padding:20px; text-align:center; color:#94a3b8;">No pending inquiries in this category.</td></tr>';
-    } else {
-      filtered.forEach(r => {
-        const time = r.createdDate ? new Date(r.createdDate).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'Recently';
-        const course = r.course || (r.type === 'Faculty' ? 'Faculty' : 'General');
-        const secSem = r.type === 'Faculty' ? 'N/A' : `${r.sec || 'N/A'} • ${r.sem || 'N/A'}`;
-        tbody.innerHTML += `
-          <tr style="border-bottom:1px solid #e2e8f0;">
-            <td style="padding:10px;"><b>${r.name}</b><div style="font-size:11px; color:#64748b;">${r.enrollment || ''}</div></td>
-            <td style="padding:10px;"><b>${course}</b></td>
-            <td style="padding:10px;">${secSem}</td>
-            <td style="padding:10px;">${time}</td>
-            <td style="padding:10px; font-size:12px; max-width:260px;">${r.query}</td>
-          </tr>
-        `;
-      });
+      tbody.innerHTML = '<tr><td colspan="5" style="padding:20px; text-align:center; color:#94a3b8;">No entries found.</td></tr>';
+      return;
     }
-    document.getElementById('staffDrilldownModal').style.display = 'flex';
+
+    filtered.forEach(r => {
+      const dateObj = r.createdDate ? new Date(r.createdDate) : new Date();
+      const formattedDate = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+      const formattedTime = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const course = r.course || (r.type === 'Faculty' ? 'Faculty' : 'General');
+      const secSem = r.type === 'Faculty' ? 'N/A' : `${r.sec || 'N/A'} • ${r.sem || 'N/A'}`;
+
+      tbody.innerHTML += `
+        <tr style="border-bottom:1px solid #e2e8f0;">
+          <td style="padding:10px;"><b>${r.name}</b><div style="font-size:11px; color:#64748b;">${r.enrollment || ''}</div></td>
+          <td style="padding:10px;"><b>${course}</b></td>
+          <td style="padding:10px;">${secSem}</td>
+          <td style="padding:10px;"><b>${formattedDate}</b><div style="font-size:11px; color:#64748b;">${formattedTime}</div></td>
+          <td style="padding:10px; font-size:12px; max-width:260px;">${r.query}</td>
+        </tr>
+      `;
+    });
+  }
+
+  function applyStaffDrilldownDateFilter() {
+    const selectedDate = document.getElementById('staffDrilldownDateFilter').value;
+    if (!selectedDate) {
+      renderStaffDrilldownRows(currentStaffTickets);
+      return;
+    }
+    const filtered = currentStaffTickets.filter(r => {
+      if (!r.createdDate) return false;
+      return r.createdDate.substring(0, 10) === selectedDate;
+    });
+    renderStaffDrilldownRows(filtered);
+    document.getElementById('staffDrilldownCountBadge').innerText = `Showing ${filtered.length} entries for ${selectedDate}`;
+  }
+
+  function clearStaffDrilldownDateFilter() {
+    document.getElementById('staffDrilldownDateFilter').value = '';
+    renderStaffDrilldownRows(currentStaffTickets);
   }
 
   function closeStaffDrilldown() {
