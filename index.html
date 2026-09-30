@@ -63,7 +63,6 @@
       gap: 14px;
     }
     
-    /* Center Column: Proportioned to fit and stretch cleanly */
     .center-column {
       width: 580px;
       flex-shrink: 0;
@@ -83,7 +82,7 @@
       background: var(--bg);
       border-radius: 24px;
       box-shadow: 10px 10px 22px var(--shadow-dark), -10px -10px 22px var(--shadow-light);
-      padding: 26px 30px 24px 30px;
+      padding: 24px 30px 22px 30px;
       width: 100%;
       min-height: 560px;
       display: flex;
@@ -97,8 +96,16 @@
       box-shadow: 8px 8px 18px var(--shadow-dark), -8px -8px 18px var(--shadow-light);
       height: fit-content;
     }
-    .header { text-align: center; margin-bottom: 14px; }
-    .header img { max-height: 48px; margin-bottom: 6px; }
+    
+    /* Enlarged College Logo */
+    .header { text-align: center; margin-bottom: 12px; }
+    .header img {
+      max-height: 76px;
+      width: auto;
+      object-fit: contain;
+      margin-bottom: 8px;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.06));
+    }
     
     .tab-container {
       display: flex;
@@ -159,36 +166,45 @@
     .grid-3 { display: flex; gap: 10px; }
     .grid-3 > div { flex: 1; }
 
+    /* Availability Status: Two-tier layout (Full name on top, status badge below) */
     .roster-list {
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      margin-top: 8px;
+      gap: 10px;
+      margin-top: 10px;
     }
     .roster-item {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 9px 13px;
-      border-radius: 11px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+      padding: 11px 14px;
+      border-radius: 12px;
       background: var(--bg);
       box-shadow: inset 2px 2px 4px var(--shadow-dark), inset -2px -2px 4px var(--shadow-light);
-      font-size: 12.5px;
-      font-weight: 600;
-      white-space: nowrap;
     }
     .roster-name {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      margin-right: 8px;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #1e293b;
+      line-height: 1.4;
+      word-break: break-word;
+      white-space: normal;
+    }
+    .roster-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 8px;
     }
     .status-dot {
       display: inline-block;
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      margin-right: 6px;
       flex-shrink: 0;
     }
     .dot-avail { background: var(--green); }
@@ -196,10 +212,10 @@
     .dot-leave { background: var(--crimson); }
     .dot-custom { background: var(--purple); }
 
-    /* Centered Highlighting Header Badge on Announcement Cards */
+    /* Announcement Cards & Enlarged Highlight Badges */
     .announcement-card {
       border-radius: 18px;
-      padding: 16px 20px;
+      padding: 18px 22px;
       box-shadow: 6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light);
       word-break: break-word;
       overflow-wrap: break-word;
@@ -211,44 +227,47 @@
     .ann-common {
       background: #fffbeb;
       border: 2px solid #fde68a;
-      border-top: 5px solid var(--amber);
+      border-top: 6px solid var(--amber);
     }
     .ann-ug {
       background: #f5f3ff;
       border: 2px solid #ddd6fe;
-      border-top: 5px solid var(--purple);
+      border-top: 6px solid var(--purple);
     }
     .ann-mba {
       background: #eff6ff;
       border: 2px solid #bfdbfe;
-      border-top: 5px solid var(--accent);
+      border-top: 6px solid var(--accent);
     }
     .ann-staff {
       background: #f0fdfa;
       border: 2px solid #99f6e4;
-      border-top: 5px solid var(--teal);
+      border-top: 6px solid var(--teal);
     }
+
+    /* Enlarged Badge (2-3 sizes bigger, prominent & centered) */
     .ann-badge {
       display: table;
-      margin: 0 auto 10px auto;
-      font-size: 11px;
-      font-weight: 800;
+      margin: 0 auto 12px auto;
+      font-size: 14px;
+      font-weight: 900;
       text-transform: uppercase;
-      letter-spacing: 0.9px;
-      padding: 4px 12px;
-      border-radius: 8px;
+      letter-spacing: 1.1px;
+      padding: 7px 18px;
+      border-radius: 10px;
       text-align: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
     }
-    .badge-common { background: #fde68a; color: #92400e; }
-    .badge-ug { background: #ddd6fe; color: #5b21b6; }
-    .badge-mba { background: #bfdbfe; color: #1e40af; }
-    .badge-staff { background: #99f6e4; color: #115e59; }
+    .badge-common { background: #fde68a; color: #92400e; border: 1px solid #fcd34d; }
+    .badge-ug { background: #ddd6fe; color: #5b21b6; border: 1px solid #c4b5fd; }
+    .badge-mba { background: #bfdbfe; color: #1e40af; border: 1px solid #93c5fd; }
+    .badge-staff { background: #99f6e4; color: #115e59; border: 1px solid #5eead4; }
 
     .ann-title {
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 800;
       color: #0f172a;
-      margin: 0 0 6px 0;
+      margin: 0 0 8px 0;
       text-align: center;
     }
     .ann-body-wrapper {
@@ -321,7 +340,7 @@
 
 <div id="kioskGateOverlay" style="display:none;">
   <div class="gate-box">
-    <img src="logo.png" alt="Logo" style="max-height:48px; margin-bottom:12px;" onerror="this.style.display='none'">
+    <img src="logo.png" alt="Logo" style="max-height:64px; margin-bottom:12px;" onerror="this.style.display='none'">
     <h3 style="color:var(--primary); margin:0 0 6px 0;">Front Desk Terminal</h3>
     <p style="font-size:13px; color:#64748b; margin-top:0;">Daily authentication required for this device.</p>
     
@@ -333,10 +352,10 @@
 
 <div class="layout-wrapper" id="mainDeskContent" style="display:none;">
   
-  <!-- LEFT COLUMN: Availability Status Roster + Left Priority Announcements -->
+  <!-- LEFT COLUMN: Availability Status Roster (Full names on top, status badge below) -->
   <div class="side-column-left">
     <div class="neu-widget" style="border-left: 5px solid var(--accent);">
-      <h4 style="margin:0 0 4px 0; color:var(--primary); font-size:14.5px;">Availability Status</h4>
+      <h4 style="margin:0 0 4px 0; color:var(--primary); font-size:15px;">Availability Status</h4>
       <div class="roster-list" id="liveStaffTicker">
         <span style="font-size:12px; color:#94a3b8;">Loading roster...</span>
       </div>
@@ -344,13 +363,13 @@
     <div id="leftStaffAnnouncements" style="display:flex; flex-direction:column; gap:14px;"></div>
   </div>
 
-  <!-- CENTER: Visitor Check-In Desk (Streched and Proportioned) -->
+  <!-- CENTER: Visitor Check-In Desk (Streched & Balanced) -->
   <div class="center-column">
     <div class="neu-card">
       <div class="header">
         <img src="logo.png" alt="ICFAI Foundation for Higher Education" onerror="this.style.display='none'">
-        <h3 style="color:var(--primary); margin: 3px 0 2px 0; font-size:18px;">Student Service Department (SSD)</h3>
-        <p style="color:#64748b; font-size: 12.5px; margin:0;">Visitor Enquiry & Check-in Desk</p>
+        <h3 style="color:var(--primary); margin: 4px 0 2px 0; font-size:18.5px;">Student Service Department (SSD)</h3>
+        <p style="color:#64748b; font-size: 13px; margin:0;">Visitor Enquiry & Check-in Desk</p>
       </div>
 
       <div class="tab-container">
@@ -359,7 +378,7 @@
         <button class="tab-btn" id="tabGeneral" type="button" onclick="switchTab('general')">General Enquiry</button>
       </div>
 
-      <!-- 1. Student Form with Auto-Clear On Backspace -->
+      <!-- 1. Student Form (Auto-clears completely when enrollment is deleted/backspaced) -->
       <form id="studentForm">
         <label style="font-size:12.5px; font-weight:600;">Enrollment Number</label>
         <input type="text" id="stuEnroll" class="neu-input" placeholder="e.g. 26BSOCBL0001" oninput="handleStudentEnrollInput()" required>
@@ -451,7 +470,7 @@
     </div>
   </div>
 
-  <!-- RIGHT COLUMN: Centered-Badge Multi-Stream Announcements -->
+  <!-- RIGHT COLUMN: Multi-Stream Announcements with Prominent Centered Badges -->
   <div class="side-column-right" id="announcementsColumn">
     
     <!-- 1. Common Announcement Card -->
@@ -613,22 +632,29 @@
     staffList.forEach(p => {
       const st = staffStatusMap[p] || 'Available';
       let dotClass = 'dot-avail';
-      let colorStyle = 'color: var(--green);';
+      let textColor = 'var(--green)';
+      let pillBg = '#dcfce7';
+
       if (st === 'Lunch Break' || st === 'In Meeting') {
         dotClass = 'dot-break';
-        colorStyle = 'color: var(--amber);';
+        textColor = 'var(--amber)';
+        pillBg = '#fef3c7';
       } else if (st === 'On Leave') {
         dotClass = 'dot-leave';
-        colorStyle = 'color: var(--crimson);';
+        textColor = 'var(--crimson)';
+        pillBg = '#fee2e2';
       } else if (st !== 'Available') {
         dotClass = 'dot-custom';
-        colorStyle = 'color: var(--purple);';
+        textColor = 'var(--purple)';
+        pillBg = '#f5f3ff';
       }
 
       ticker.innerHTML += `
-        <div class="roster-item" title="${p} - ${st}">
+        <div class="roster-item">
           <span class="roster-name">${p}</span>
-          <span style="${colorStyle}; flex-shrink:0;"><span class="status-dot ${dotClass}"></span>${st}</span>
+          <span class="roster-status-pill" style="background: ${pillBg}; color: ${textColor};">
+            <span class="status-dot ${dotClass}"></span>${st}
+          </span>
         </div>
       `;
     });
@@ -774,7 +800,7 @@
     }
   }
 
-  // Clear populated details immediately when input is empty or backspaced
+  // Auto-clear inputs completely when enrollment number is backspaced or emptied
   function handleStudentEnrollInput() {
     const v = document.getElementById('stuEnroll').value.trim().toUpperCase();
     if (!v) {
