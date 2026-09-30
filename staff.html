@@ -212,6 +212,39 @@
     }
     .tool-btn:hover { background: #e2e8f0; }
 
+    /* Motion Welcome Toast */
+    #welcomeToastOverlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(6px);
+      z-index: 99999;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .welcome-card {
+      background: var(--bg);
+      border-radius: 28px;
+      box-shadow: 14px 14px 28px var(--dark-shadow), -14px -14px 28px var(--light-shadow);
+      padding: 40px 50px;
+      text-align: center;
+      max-width: 480px;
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      animation: popInBounce 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    @keyframes popInBounce {
+      0% { opacity: 0; transform: scale(0.7) translateY(20px); }
+      70% { opacity: 1; transform: scale(1.04) translateY(-4px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    @keyframes fadeOutMotion {
+      0% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(0.85) translateY(-15px); }
+    }
+
     .subtle-footer {
       width: 100%;
       text-align: center;
@@ -225,6 +258,18 @@
   </style>
 </head>
 <body>
+
+<!-- Motion Welcome Greeting Toast (Auto-Dismisses after 2 Seconds) -->
+<div id="welcomeToastOverlay">
+  <div class="welcome-card" id="welcomeToastBox">
+    <div style="width:64px; height:64px; border-radius:50%; background:#dbeafe; display:flex; align-items:center; justify-content:center; margin: 0 auto 16px auto; box-shadow: inset 3px 3px 6px var(--dark-shadow), inset -3px -3px 6px var(--light-shadow);">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="#2563eb"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+    </div>
+    <h2 style="color:var(--primary); margin:0 0 8px 0; font-size:24px;">Welcome Back!</h2>
+    <p id="welcomeStaffNameText" style="font-size:16px; font-weight:700; color:var(--accent); margin:0 0 8px 0;">Staff Terminal Active</p>
+    <div style="font-size:13px; color:var(--subtext);">Accessing your live visitor service workstation...</div>
+  </div>
+</div>
 
 <div class="neu-card" id="loginBox" style="max-width: 440px; margin: 60px auto; text-align: center;">
   <h2 style="color:var(--primary); margin-bottom: 8px;">SSD Staff Terminal</h2>
@@ -361,7 +406,6 @@
   </div>
 </div>
 
-<!-- Dedicated Staff Announcement Modal with Full Formatting & Kiosk Capacity Check -->
 <div id="staffNoticeModal" class="modal-overlay">
   <div class="neu-card" style="max-width: 500px; width: 100%;">
     <h3 style="color:var(--teal); margin-top:0;">My Desk Announcement</h3>
@@ -480,6 +524,21 @@
     document.execCommand(command, false, val);
   }
 
+  function showWelcomeToast(name) {
+    const overlay = document.getElementById('welcomeToastOverlay');
+    const box = document.getElementById('welcomeToastBox');
+    document.getElementById('welcomeStaffNameText').innerText = name;
+    overlay.style.display = 'flex';
+
+    setTimeout(() => {
+      box.style.animation = 'fadeOutMotion 0.35s ease-out forwards';
+      setTimeout(() => {
+        overlay.style.display = 'none';
+        box.style.animation = '';
+      }, 350);
+    }, 2000);
+  }
+
   function renderStaffDropdown(profiles) {
     const sel = document.getElementById('staffSelect');
     if (!sel) return;
@@ -568,11 +627,12 @@
           password: pwd,
           updatedAt: new Date().toISOString()
         });
-        alert("Password created successfully. Logging into workstation.");
+        showWelcomeToast(p);
         enterWorkstation(p);
       } else {
         const doc = await db.collection('staffSecurity').doc(p).get();
         if (doc.exists && doc.data().password === pwd) {
+          showWelcomeToast(p);
           enterWorkstation(p);
         } else {
           alert("Incorrect password for " + p + ".");
@@ -701,14 +761,12 @@
     document.getElementById('staffNoticeModal').style.display = 'none';
   }
 
-  // Capacity Guard: Check total active announcements before publishing to prevent kiosk overload
   async function saveStaffNotice() {
     const active = document.getElementById('staffNoticeActive').value === 'true';
     const title = document.getElementById('staffNoticeTitle').value.trim();
     const msg = document.getElementById('staffNoticeBody').innerHTML.trim();
 
     if (active) {
-      // Tally currently displayed cards across both Head and Staff broadcasts
       let totalActiveCards = 0;
       const bSnap = await db.collection('settings').doc('broadcast').get();
       if (bSnap.exists) {
@@ -722,7 +780,6 @@
         if (d.id !== activeStaff && d.data().active && d.data().message) totalActiveCards++;
       });
 
-      // Max capacity threshold = 4 cards
       if (totalActiveCards >= 4) {
         alert("Front desk screen space is currently full (Maximum 4 announcements).\nPlease clear or deactivate an existing announcement before adding this one.");
         return;
@@ -811,7 +868,6 @@
         }
       });
 
-      // Maintain chronological order: Newest entries at the very top
       currentStaffTickets.sort((a, b) => {
         const tA = a.startTimestamp || new Date(a.createdDate).getTime() || 0;
         const tB = b.startTimestamp || new Date(b.createdDate).getTime() || 0;
@@ -930,7 +986,6 @@
       filtered = ticketList.filter(r => r.type === 'Faculty');
     }
 
-    // Strict Date & Time Sort: Most Recent -> Next Oldest
     filtered.sort((a, b) => {
       const tA = a.startTimestamp || new Date(a.createdDate).getTime() || 0;
       const tB = b.startTimestamp || new Date(b.createdDate).getTime() || 0;
