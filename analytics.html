@@ -158,7 +158,6 @@
       border-radius: 4px;
     }
 
-    /* Enhanced WYSIWYG Editor Toolbars with Fonts, Size, Undo/Redo */
     .editor-toolbar {
       display: flex;
       flex-wrap: wrap;
@@ -240,7 +239,6 @@
 </head>
 <body>
 
-<!-- SSD Head Master Gate -->
 <div id="headAuthOverlay">
   <div class="head-gate-box">
     <img src="logo.png" alt="Logo" style="max-height:48px; margin-bottom:12px;" onerror="this.style.display='none'">
@@ -258,7 +256,6 @@
   </div>
 </div>
 
-<!-- Main Executive Workspace -->
 <div id="executiveContentWrapper" style="display:none; max-width: 1280px; width: 100%; margin: auto;">
   
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; flex-wrap:wrap; gap:15px;">
@@ -318,7 +315,6 @@
       </div>
     </div>
 
-    <!-- Charts Grid 1 -->
     <div class="grid-2" style="margin-bottom: 24px;">
       <div class="neu-card" style="margin-bottom:0;">
         <h3 style="color:var(--primary); margin:0 0 12px 0;">Daily Influx Timeline</h3>
@@ -334,7 +330,6 @@
       </div>
     </div>
 
-    <!-- Charts Grid 2 -->
     <div class="grid-2" style="margin-bottom: 24px;">
       <div class="neu-card" style="margin-bottom:0;">
         <h3 style="color:var(--purple); margin:0 0 12px 0;">Peak Hours Influx (Hourly Traffic)</h3>
@@ -441,11 +436,10 @@
       </div>
     </div>
 
-    <!-- Multi-Stream Announcements with Rich Text Editor & Auto-Scroll -->
     <div class="neu-card">
       <h3 style="color:var(--primary); margin-top:0;">Front Desk Multi-Stream Announcements</h3>
       <p style="font-size:13px; color:var(--subtext); margin-bottom:18px;">
-        Publish and format rich-text announcements with font choices, sizes, bold, italic, highlights, bullet points, undo/redo, and auto-scroll tickers.
+        Publish and format rich-text announcements with fonts, sizes, formatting, undo/redo, and bullet pointers.
       </p>
 
       <div class="grid-3">
@@ -751,12 +745,20 @@
 
 </div>
 
-<!-- Drill-down Inspection Modal -->
+<!-- Drill-down Inspection Modal with Date Filtering & Chronological Sorting -->
 <div id="drilldownModal" class="modal-overlay" style="display:none;">
   <div class="neu-card" style="max-width: 950px; width: 100%; max-height: 85vh; display: flex; flex-direction: column;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; border-bottom: 1px solid #cbd5e1; padding-bottom: 10px;">
-      <h3 id="drilldownTitle" style="color:var(--primary); margin:0;">Metric Records Explorer</h3>
-      <button class="neu-btn" style="padding: 6px 14px; font-size: 13px;" onclick="closeDrilldown()">Close</button>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px; border-bottom: 1px solid #cbd5e1; padding-bottom: 10px; flex-wrap:wrap; gap:10px;">
+      <div>
+        <h3 id="drilldownTitle" style="color:var(--primary); margin:0;">Metric Records Explorer</h3>
+        <span id="drilldownCountBadge" style="font-size:12px; color:var(--accent); font-weight:700;">Showing all recent entries</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <label style="font-size:12px; font-weight:700; color:var(--subtext);">Filter Date:</label>
+        <input type="date" id="drilldownDateFilter" class="neu-inset" style="padding:6px 10px; width:auto;" onchange="applyDrilldownDateFilter()">
+        <button class="neu-btn" style="padding: 6px 12px; font-size: 12px;" onclick="clearDrilldownDateFilter()">Clear</button>
+        <button class="neu-btn" style="padding: 6px 14px; font-size: 13px;" onclick="closeDrilldown()">Close</button>
+      </div>
     </div>
     
     <div style="overflow-y: auto; flex: 1;">
@@ -768,6 +770,7 @@
             <th style="padding:10px;">Enroll / Contact</th>
             <th style="padding:10px;">Assigned Staff</th>
             <th style="padding:10px;">Status</th>
+            <th style="padding:10px;">Date & Time</th>
             <th style="padding:10px;">Query</th>
           </tr>
         </thead>
@@ -797,7 +800,6 @@
   </div>
 </div>
 
-<!-- Prominent Credit Footer -->
 <div class="subtle-footer">
   Designed by Ayushi Gupta • Developed by Mohith Yadav S
 </div>
@@ -819,6 +821,7 @@
   let currentStaffList = [];
   let activeStudentList = {};
   let activeFacultyList = [];
+  let currentDrilldownRecords = [];
   
   let timelineChartInstance = null;
   let demographicsChartInstance = null;
@@ -1042,6 +1045,13 @@
       }
     });
 
+    // Ensure master list is sorted descending: Newest entries at top
+    masterRecords.sort((a, b) => {
+      const tA = a.startTimestamp || new Date(a.createdDate).getTime() || 0;
+      const tB = b.startTimestamp || new Date(b.createdDate).getTime() || 0;
+      return tB - tA;
+    });
+
     const total = masterRecords.length;
     document.getElementById('kpiTotal').innerText = total;
     document.getElementById('kpiStudent').innerText = students;
@@ -1060,42 +1070,82 @@
     renderMasterQueue();
   });
 
+  // Drill-down Modal with Date Filtering & Chronological Sorting
   function openDrilldown(type, title) {
-    const modal = document.getElementById('drilldownModal');
     document.getElementById('drilldownTitle').innerText = title;
+    document.getElementById('drilldownDateFilter').value = '';
+
+    if (type === 'Student' || type === 'Faculty' || type === 'General') {
+      currentDrilldownRecords = masterRecords.filter(r => r.type === type);
+    } else if (type === 'repeat') {
+      currentDrilldownRecords = masterRecords.filter(r => r.isRepeatVisitor);
+    } else if (type === 'Resolved') {
+      currentDrilldownRecords = masterRecords.filter(r => r.status === 'Resolved');
+    } else {
+      currentDrilldownRecords = [...masterRecords];
+    }
+
+    renderDrilldownRows(currentDrilldownRecords);
+    document.getElementById('drilldownModal').style.display = 'flex';
+  }
+
+  function renderDrilldownRows(records) {
     const tbody = document.getElementById('drilldownTableBody');
     tbody.innerHTML = '';
 
-    let filtered = masterRecords;
-    if (type === 'Student' || type === 'Faculty' || type === 'General') {
-      filtered = masterRecords.filter(r => r.type === type);
-    } else if (type === 'repeat') {
-      filtered = masterRecords.filter(r => r.isRepeatVisitor);
-    } else if (type === 'Resolved') {
-      filtered = masterRecords.filter(r => r.status === 'Resolved');
+    // Sort Newest -> Oldest
+    records.sort((a, b) => {
+      const tA = a.startTimestamp || new Date(a.createdDate).getTime() || 0;
+      const tB = b.startTimestamp || new Date(b.createdDate).getTime() || 0;
+      return tB - tA;
+    });
+
+    document.getElementById('drilldownCountBadge').innerText = `Displaying ${records.length} records (Sorted Newest to Oldest)`;
+
+    if (!records.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="padding:20px; text-align:center; color:#94a3b8;">No records found.</td></tr>';
+      return;
     }
 
-    if (!filtered.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="padding:20px; text-align:center; color:#94a3b8;">No matching entries found.</td></tr>';
-    } else {
-      filtered.forEach(r => {
-        const time = r.createdDate ? new Date(r.createdDate).toLocaleDateString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : 'N/A';
-        const contactOrEnroll = r.enrollment !== 'GUEST' && r.enrollment !== 'FACULTY' ? (r.enrollment || 'N/A') : (r.contact || 'N/A');
-        const badgeColor = r.status === 'Resolved' ? 'color:green;' : 'color:red;';
-        const course = r.course || (r.type === 'Faculty' ? 'Faculty' : 'General');
-        tbody.innerHTML += `
-          <tr style="border-bottom:1px solid #e2e8f0;">
-            <td style="padding:10px;"><b>${r.name || 'N/A'}</b><div style="font-size:11px; color:#64748b;">${r.type} • ${time}</div></td>
-            <td style="padding:10px;"><b>${course}</b></td>
-            <td style="padding:10px;">${contactOrEnroll}</td>
-            <td style="padding:10px;">${r.assignedStaff || 'Unassigned'}</td>
-            <td style="padding:10px; font-weight:700; ${badgeColor}">${r.status}</td>
-            <td style="padding:10px; font-size:12px; max-width:260px;">${r.query}</td>
-          </tr>
-        `;
-      });
+    records.forEach(r => {
+      const dateObj = r.createdDate ? new Date(r.createdDate) : new Date();
+      const formattedDate = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+      const formattedTime = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const contactOrEnroll = r.enrollment !== 'GUEST' && r.enrollment !== 'FACULTY' ? (r.enrollment || 'N/A') : (r.contact || 'N/A');
+      const badgeColor = r.status === 'Resolved' ? 'color:green;' : 'color:red;';
+      const course = r.course || (r.type === 'Faculty' ? 'Faculty' : 'General');
+      
+      tbody.innerHTML += `
+        <tr style="border-bottom:1px solid #e2e8f0;">
+          <td style="padding:10px;"><b>${r.name || 'N/A'}</b><div style="font-size:11px; color:#64748b;">${r.type}</div></td>
+          <td style="padding:10px;"><b>${course}</b></td>
+          <td style="padding:10px;">${contactOrEnroll}</td>
+          <td style="padding:10px;">${r.assignedStaff || 'Unassigned'}</td>
+          <td style="padding:10px; font-weight:700; ${badgeColor}">${r.status}</td>
+          <td style="padding:10px;"><b>${formattedDate}</b><div style="font-size:11px; color:#64748b;">${formattedTime}</div></td>
+          <td style="padding:10px; font-size:12px; max-width:240px;">${r.query}</td>
+        </tr>
+      `;
+    });
+  }
+
+  function applyDrilldownDateFilter() {
+    const selectedDate = document.getElementById('drilldownDateFilter').value;
+    if (!selectedDate) {
+      renderDrilldownRows(currentDrilldownRecords);
+      return;
     }
-    modal.style.display = 'flex';
+    const filtered = currentDrilldownRecords.filter(r => {
+      if (!r.createdDate) return false;
+      return r.createdDate.substring(0, 10) === selectedDate;
+    });
+    renderDrilldownRows(filtered);
+    document.getElementById('drilldownCountBadge').innerText = `Showing ${filtered.length} entries for ${selectedDate}`;
+  }
+
+  function clearDrilldownDateFilter() {
+    document.getElementById('drilldownDateFilter').value = '';
+    renderDrilldownRows(currentDrilldownRecords);
   }
 
   function closeDrilldown() {
@@ -1318,7 +1368,6 @@
     db.collection('settings').doc('staffList').set({ names: currentStaffList });
   }
 
-  // Directory Handlers
   db.collection('directory').doc('master').onSnapshot(doc => {
     if (doc.exists) {
       const d = doc.data();
