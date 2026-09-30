@@ -32,13 +32,13 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 16px 20px 10px 20px;
+      padding: 16px 20px 12px 20px;
     }
     .layout-wrapper {
       display: flex;
       justify-content: center;
       align-items: flex-start;
-      gap: 20px;
+      gap: 22px;
       width: 100%;
       max-width: 1480px;
       margin: 0 auto;
@@ -51,7 +51,7 @@
       }
       .side-column-left, .side-column-right, .center-column {
         width: 100% !important;
-        max-width: 620px !important;
+        max-width: 640px !important;
       }
     }
     
@@ -63,8 +63,9 @@
       gap: 14px;
     }
     
+    /* Center Column: Proportioned to fit and stretch cleanly */
     .center-column {
-      width: 530px;
+      width: 580px;
       flex-shrink: 0;
       display: flex;
       flex-direction: column;
@@ -81,10 +82,13 @@
     .neu-card {
       background: var(--bg);
       border-radius: 24px;
-      box-shadow: 10px 10px 20px var(--shadow-dark), -10px -10px 20px var(--shadow-light);
-      padding: 22px 26px;
+      box-shadow: 10px 10px 22px var(--shadow-dark), -10px -10px 22px var(--shadow-light);
+      padding: 26px 30px 24px 30px;
       width: 100%;
-      height: fit-content;
+      min-height: 560px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
     .neu-widget {
       background: var(--bg);
@@ -93,25 +97,25 @@
       box-shadow: 8px 8px 18px var(--shadow-dark), -8px -8px 18px var(--shadow-light);
       height: fit-content;
     }
-    .header { text-align: center; margin-bottom: 12px; }
-    .header img { max-height: 44px; margin-bottom: 4px; }
+    .header { text-align: center; margin-bottom: 14px; }
+    .header img { max-height: 48px; margin-bottom: 6px; }
     
     .tab-container {
       display: flex;
       background: var(--bg);
-      border-radius: 12px;
-      padding: 4px;
+      border-radius: 14px;
+      padding: 5px;
       box-shadow: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);
-      margin-bottom: 14px;
+      margin-bottom: 16px;
     }
     .tab-btn {
       flex: 1;
       border: none;
       background: transparent;
-      padding: 8px;
-      border-radius: 10px;
+      padding: 10px;
+      border-radius: 11px;
       font-weight: 700;
-      font-size: 13px;
+      font-size: 13.5px;
       color: #64748b;
       cursor: pointer;
       transition: all 0.2s ease;
@@ -126,47 +130,47 @@
       box-sizing: border-box;
       background: var(--bg);
       border: none;
-      border-radius: 10px;
-      padding: 9px 13px;
-      margin-top: 3px;
-      margin-bottom: 10px;
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-top: 4px;
+      margin-bottom: 12px;
       box-shadow: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);
       outline: none;
-      font-size: 13px;
+      font-size: 14px;
       color: #1e293b;
     }
     .neu-btn {
       width: 100%;
       border: none;
-      padding: 12px;
-      border-radius: 12px;
+      padding: 14px;
+      border-radius: 14px;
       background: var(--bg);
       color: var(--accent);
       font-weight: 700;
-      font-size: 14px;
-      box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+      font-size: 15px;
+      box-shadow: 5px 5px 11px var(--shadow-dark), -5px -5px 11px var(--shadow-light);
       cursor: pointer;
       transition: all 0.15s ease;
     }
     .neu-btn:hover { box-shadow: 7px 7px 14px var(--shadow-dark), -7px -7px 14px var(--shadow-light); }
     .neu-btn:active { box-shadow: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light); }
-    .grid-2 { display: flex; gap: 10px; }
+    .grid-2 { display: flex; gap: 12px; }
     .grid-2 > div { flex: 1; }
-    .grid-3 { display: flex; gap: 8px; }
+    .grid-3 { display: flex; gap: 10px; }
     .grid-3 > div { flex: 1; }
 
     .roster-list {
       display: flex;
       flex-direction: column;
-      gap: 7px;
+      gap: 8px;
       margin-top: 8px;
     }
     .roster-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 8px 12px;
-      border-radius: 10px;
+      padding: 9px 13px;
+      border-radius: 11px;
       background: var(--bg);
       box-shadow: inset 2px 2px 4px var(--shadow-dark), inset -2px -2px 4px var(--shadow-light);
       font-size: 12.5px;
@@ -192,9 +196,10 @@
     .dot-leave { background: var(--crimson); }
     .dot-custom { background: var(--purple); }
 
+    /* Centered Highlighting Header Badge on Announcement Cards */
     .announcement-card {
-      border-radius: 16px;
-      padding: 14px 18px;
+      border-radius: 18px;
+      padding: 16px 20px;
       box-shadow: 6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light);
       word-break: break-word;
       overflow-wrap: break-word;
@@ -206,35 +211,33 @@
     .ann-common {
       background: #fffbeb;
       border: 2px solid #fde68a;
-      border-left: 6px solid var(--amber);
+      border-top: 5px solid var(--amber);
     }
     .ann-ug {
       background: #f5f3ff;
       border: 2px solid #ddd6fe;
-      border-left: 6px solid var(--purple);
+      border-top: 5px solid var(--purple);
     }
     .ann-mba {
       background: #eff6ff;
       border: 2px solid #bfdbfe;
-      border-left: 6px solid var(--accent);
+      border-top: 5px solid var(--accent);
     }
     .ann-staff {
       background: #f0fdfa;
       border: 2px solid #99f6e4;
-      border-left: 6px solid var(--teal);
+      border-top: 5px solid var(--teal);
     }
     .ann-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 10px;
+      display: table;
+      margin: 0 auto 10px auto;
+      font-size: 11px;
       font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0.8px;
-      padding: 3px 8px;
-      border-radius: 6px;
-      margin-bottom: 6px;
-      width: fit-content;
+      letter-spacing: 0.9px;
+      padding: 4px 12px;
+      border-radius: 8px;
+      text-align: center;
     }
     .badge-common { background: #fde68a; color: #92400e; }
     .badge-ug { background: #ddd6fe; color: #5b21b6; }
@@ -242,23 +245,24 @@
     .badge-staff { background: #99f6e4; color: #115e59; }
 
     .ann-title {
-      font-size: 14.5px;
+      font-size: 15px;
       font-weight: 800;
       color: #0f172a;
       margin: 0 0 6px 0;
+      text-align: center;
     }
     .ann-body-wrapper {
       overflow: hidden;
       position: relative;
     }
     .ann-body {
-      font-size: 12.5px;
-      line-height: 1.5;
+      font-size: 13px;
+      line-height: 1.55;
       color: #334155;
     }
     .ann-body ul, .ann-body ol {
       margin: 4px 0;
-      padding-left: 18px;
+      padding-left: 20px;
     }
 
     .marquee-scroll {
@@ -275,10 +279,10 @@
     .status-alert-box {
       display: none;
       border-radius: 10px;
-      padding: 8px 12px;
-      margin-bottom: 10px;
-      font-size: 12px;
-      line-height: 1.35;
+      padding: 9px 14px;
+      margin-bottom: 12px;
+      font-size: 12.5px;
+      line-height: 1.4;
     }
 
     #kioskGateOverlay {
@@ -304,7 +308,7 @@
     .subtle-footer {
       width: 100%;
       text-align: center;
-      padding: 10px 0 4px 0;
+      padding: 12px 0 4px 0;
       font-size: 13.5px;
       color: #475569;
       letter-spacing: 0.5px;
@@ -329,7 +333,7 @@
 
 <div class="layout-wrapper" id="mainDeskContent" style="display:none;">
   
-  <!-- LEFT COLUMN: Availability Status Roster + Priority Staff Desk Announcements -->
+  <!-- LEFT COLUMN: Availability Status Roster + Left Priority Announcements -->
   <div class="side-column-left">
     <div class="neu-widget" style="border-left: 5px solid var(--accent);">
       <h4 style="margin:0 0 4px 0; color:var(--primary); font-size:14.5px;">Availability Status</h4>
@@ -337,17 +341,16 @@
         <span style="font-size:12px; color:#94a3b8;">Loading roster...</span>
       </div>
     </div>
-    <!-- Left Desk Announcements Container (Staff Notices Render Here First) -->
     <div id="leftStaffAnnouncements" style="display:flex; flex-direction:column; gap:14px;"></div>
   </div>
 
-  <!-- CENTER: Visitor Check-In Desk -->
+  <!-- CENTER: Visitor Check-In Desk (Streched and Proportioned) -->
   <div class="center-column">
     <div class="neu-card">
       <div class="header">
         <img src="logo.png" alt="ICFAI Foundation for Higher Education" onerror="this.style.display='none'">
-        <h3 style="color:var(--primary); margin: 3px 0 2px 0; font-size:17px;">Student Service Department (SSD)</h3>
-        <p style="color:#64748b; font-size: 12px; margin:0;">Visitor Enquiry & Check-in Desk</p>
+        <h3 style="color:var(--primary); margin: 3px 0 2px 0; font-size:18px;">Student Service Department (SSD)</h3>
+        <p style="color:#64748b; font-size: 12.5px; margin:0;">Visitor Enquiry & Check-in Desk</p>
       </div>
 
       <div class="tab-container">
@@ -356,70 +359,73 @@
         <button class="tab-btn" id="tabGeneral" type="button" onclick="switchTab('general')">General Enquiry</button>
       </div>
 
+      <!-- 1. Student Form with Auto-Clear On Backspace -->
       <form id="studentForm">
-        <label style="font-size:12px; font-weight:600;">Enrollment Number</label>
-        <input type="text" id="stuEnroll" class="neu-input" placeholder="e.g. 26BSOCBL0001" oninput="lookupStudent()" required>
+        <label style="font-size:12.5px; font-weight:600;">Enrollment Number</label>
+        <input type="text" id="stuEnroll" class="neu-input" placeholder="e.g. 26BSOCBL0001" oninput="handleStudentEnrollInput()" required>
 
-        <label style="font-size:12px; font-weight:600;">Full Name</label>
+        <label style="font-size:12.5px; font-weight:600;">Full Name</label>
         <input type="text" id="stuName" class="neu-input" placeholder="Auto-populated / Editable" required>
 
         <div class="grid-3">
           <div>
-            <label style="font-size:12px; font-weight:600;">Course</label>
+            <label style="font-size:12.5px; font-weight:600;">Course</label>
             <input type="text" id="stuCourse" class="neu-input" placeholder="e.g. MBA, BCA">
           </div>
           <div>
-            <label style="font-size:12px; font-weight:600;">Section</label>
+            <label style="font-size:12.5px; font-weight:600;">Section</label>
             <input type="text" id="stuSec" class="neu-input" placeholder="e.g. A">
           </div>
           <div>
-            <label style="font-size:12px; font-weight:600;">Semester</label>
+            <label style="font-size:12.5px; font-weight:600;">Semester</label>
             <input type="text" id="stuSem" class="neu-input" placeholder="e.g. 1st Sem">
           </div>
         </div>
 
-        <label style="font-size:12px; font-weight:600;">Select SSD Staff Member</label>
+        <label style="font-size:12.5px; font-weight:600;">Select SSD Staff Member</label>
         <select id="stuStaff" class="neu-select staffDropdown" onchange="checkStaffStatus('stuStaff', 'stuStatusAlert')" required>
           <option value="">-- Choose Staff Member --</option>
         </select>
 
         <div id="stuStatusAlert" class="status-alert-box"></div>
 
-        <label style="font-size:12px; font-weight:600;">Reason for Visit / Query</label>
-        <textarea id="stuQuery" rows="2" class="neu-textarea" placeholder="State your enquiry briefly..." required></textarea>
+        <label style="font-size:12.5px; font-weight:600;">Reason for Visit / Query</label>
+        <textarea id="stuQuery" rows="3" class="neu-textarea" placeholder="State your enquiry briefly..." required></textarea>
 
-        <button type="submit" id="stuSubmitBtn" class="neu-btn">Submit Student Enquiry</button>
+        <button type="submit" id="stuSubmitBtn" class="neu-btn" style="margin-top:4px;">Submit Student Enquiry</button>
       </form>
 
+      <!-- 2. Faculty Form -->
       <form id="facultyForm" style="display:none;">
-        <label style="font-size:12px; font-weight:600;">Faculty Name</label>
+        <label style="font-size:12.5px; font-weight:600;">Faculty Name</label>
         <input type="text" id="facName" list="facList" class="neu-input" placeholder="Type or select faculty name..." required>
         <datalist id="facList"></datalist>
 
-        <label style="font-size:12px; font-weight:600;">Select SSD Staff Member</label>
+        <label style="font-size:12.5px; font-weight:600;">Select SSD Staff Member</label>
         <select id="facStaff" class="neu-select staffDropdown" onchange="checkStaffStatus('facStaff', 'facStatusAlert')" required>
           <option value="">-- Choose Staff Member --</option>
         </select>
 
         <div id="facStatusAlert" class="status-alert-box"></div>
 
-        <label style="font-size:12px; font-weight:600;">Brief Query</label>
-        <textarea id="facQuery" rows="3" class="neu-textarea" placeholder="State query briefly..." required></textarea>
+        <label style="font-size:12.5px; font-weight:600;">Brief Query</label>
+        <textarea id="facQuery" rows="4" class="neu-textarea" placeholder="State query briefly..." required></textarea>
 
-        <button type="submit" id="facSubmitBtn" class="neu-btn">Submit Faculty Enquiry</button>
+        <button type="submit" id="facSubmitBtn" class="neu-btn" style="margin-top:4px;">Submit Faculty Enquiry</button>
       </form>
 
+      <!-- 3. General Form -->
       <form id="generalForm" style="display:none;">
-        <label style="font-size:12px; font-weight:600;">Visitor / Inquirer Full Name</label>
+        <label style="font-size:12.5px; font-weight:600;">Visitor / Inquirer Full Name</label>
         <input type="text" id="genName" class="neu-input" placeholder="Enter your full name" required>
 
         <div class="grid-2">
           <div>
-            <label style="font-size:12px; font-weight:600;">Contact Details</label>
+            <label style="font-size:12.5px; font-weight:600;">Contact Details</label>
             <input type="text" id="genContact" class="neu-input" placeholder="Phone or Email" required>
           </div>
           <div>
-            <label style="font-size:12px; font-weight:600;">Category</label>
+            <label style="font-size:12.5px; font-weight:600;">Category</label>
             <select id="genCategory" class="neu-select">
               <option value="General Information">General Information</option>
               <option value="Admissions / Campus Visit">Admissions / Campus Visit</option>
@@ -430,24 +436,25 @@
           </div>
         </div>
 
-        <label style="font-size:12px; font-weight:600;">Select SSD Staff Member</label>
+        <label style="font-size:12.5px; font-weight:600;">Select SSD Staff Member</label>
         <select id="genStaff" class="neu-select staffDropdown" onchange="checkStaffStatus('genStaff', 'genStatusAlert')" required>
           <option value="">-- Choose Staff Member --</option>
         </select>
 
         <div id="genStatusAlert" class="status-alert-box"></div>
 
-        <label style="font-size:12px; font-weight:600;">Brief Enquiry Description</label>
-        <textarea id="genQuery" rows="2" class="neu-textarea" placeholder="State enquiry details..." required></textarea>
+        <label style="font-size:12.5px; font-weight:600;">Brief Enquiry Description</label>
+        <textarea id="genQuery" rows="3" class="neu-textarea" placeholder="State enquiry details..." required></textarea>
 
-        <button type="submit" id="genSubmitBtn" class="neu-btn">Submit General Enquiry</button>
+        <button type="submit" id="genSubmitBtn" class="neu-btn" style="margin-top:4px;">Submit General Enquiry</button>
       </form>
     </div>
   </div>
 
-  <!-- RIGHT COLUMN: Reserved for SSD Head Announcements + Spillover -->
+  <!-- RIGHT COLUMN: Centered-Badge Multi-Stream Announcements -->
   <div class="side-column-right" id="announcementsColumn">
     
+    <!-- 1. Common Announcement Card -->
     <div id="cardAnnCommon" class="announcement-card ann-common" style="display:none;">
       <div class="ann-badge badge-common">General Announcement</div>
       <div class="ann-title" id="annTitleCommon">Announcement</div>
@@ -456,6 +463,7 @@
       </div>
     </div>
 
+    <!-- 2. UG Announcement Card -->
     <div id="cardAnnUG" class="announcement-card ann-ug" style="display:none;">
       <div class="ann-badge badge-ug">UG Announcement (BCA / BBA LLB)</div>
       <div class="ann-title" id="annTitleUG">UG Notice</div>
@@ -464,6 +472,7 @@
       </div>
     </div>
 
+    <!-- 3. MBA Announcement Card -->
     <div id="cardAnnMBA" class="announcement-card ann-mba" style="display:none;">
       <div class="ann-badge badge-mba">MBA Announcement</div>
       <div class="ann-title" id="annTitleMBA">MBA Notice</div>
@@ -472,7 +481,7 @@
       </div>
     </div>
 
-    <!-- Right Side Spillover for Staff Announcements if Left Column Full -->
+    <!-- Right Side Spillover for Staff Announcements -->
     <div id="rightStaffAnnouncements" style="display:flex; flex-direction:column; gap:14px;"></div>
 
   </div>
@@ -632,7 +641,6 @@
     }
   });
 
-  // Intelligent Left-Priority vs. Right Spillover Staff Notices Router
   db.collection('staffBroadcasts').onSnapshot(snap => {
     const leftContainer = document.getElementById('leftStaffAnnouncements');
     const rightContainer = document.getElementById('rightStaffAnnouncements');
@@ -656,7 +664,6 @@
           <div class="ann-body">${d.message}</div>
         </div>
       `;
-      // First 2 notices anchor cleanly on the LEFT under Availability Roster. Excess spills to the right.
       if (idx < 2) {
         leftContainer.innerHTML += cardHTML;
       } else {
@@ -767,8 +774,17 @@
     }
   }
 
-  function lookupStudent() {
+  // Clear populated details immediately when input is empty or backspaced
+  function handleStudentEnrollInput() {
     const v = document.getElementById('stuEnroll').value.trim().toUpperCase();
+    if (!v) {
+      document.getElementById('stuName').value = '';
+      document.getElementById('stuCourse').value = '';
+      document.getElementById('stuSec').value = '';
+      document.getElementById('stuSem').value = '';
+      return;
+    }
+
     if (studentMap[v]) {
       document.getElementById('stuName').value = studentMap[v].name || '';
       document.getElementById('stuCourse').value = studentMap[v].course || '';
