@@ -97,14 +97,16 @@
       height: fit-content;
     }
     
-    /* Enlarged College Logo */
+    /* New Wide Official Logo Calibration */
     .header { text-align: center; margin-bottom: 12px; }
     .header img {
-      max-height: 76px;
+      max-height: 56px;
+      max-width: 310px;
       width: auto;
+      height: auto;
       object-fit: contain;
-      margin-bottom: 8px;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.06));
+      margin-bottom: 6px;
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.06));
     }
     
     .tab-container {
@@ -166,7 +168,6 @@
     .grid-3 { display: flex; gap: 10px; }
     .grid-3 > div { flex: 1; }
 
-    /* Availability Status: Two-tier layout (Full name on top, status badge below) */
     .roster-list {
       display: flex;
       flex-direction: column;
@@ -212,7 +213,6 @@
     .dot-leave { background: var(--crimson); }
     .dot-custom { background: var(--purple); }
 
-    /* Announcement Cards & Enlarged Highlight Badges */
     .announcement-card {
       border-radius: 18px;
       padding: 18px 22px;
@@ -245,7 +245,6 @@
       border-top: 6px solid var(--teal);
     }
 
-    /* Enlarged Badge (2-3 sizes bigger, prominent & centered) */
     .ann-badge {
       display: table;
       margin: 0 auto 12px auto;
@@ -340,7 +339,7 @@
 
 <div id="kioskGateOverlay" style="display:none;">
   <div class="gate-box">
-    <img src="logo.png" alt="Logo" style="max-height:64px; margin-bottom:12px;" onerror="this.style.display='none'">
+    <img src="logo.png" alt="Logo" style="max-height:54px; max-width:280px; object-fit:contain; margin-bottom:12px;" onerror="this.style.display='none'">
     <h3 style="color:var(--primary); margin:0 0 6px 0;">Front Desk Terminal</h3>
     <p style="font-size:13px; color:#64748b; margin-top:0;">Daily authentication required for this device.</p>
     
@@ -352,7 +351,7 @@
 
 <div class="layout-wrapper" id="mainDeskContent" style="display:none;">
   
-  <!-- LEFT COLUMN: Availability Status Roster (Full names on top, status badge below) -->
+  <!-- LEFT COLUMN: Availability Status Roster -->
   <div class="side-column-left">
     <div class="neu-widget" style="border-left: 5px solid var(--accent);">
       <h4 style="margin:0 0 4px 0; color:var(--primary); font-size:15px;">Availability Status</h4>
@@ -363,11 +362,11 @@
     <div id="leftStaffAnnouncements" style="display:flex; flex-direction:column; gap:14px;"></div>
   </div>
 
-  <!-- CENTER: Visitor Check-In Desk (Streched & Balanced) -->
+  <!-- CENTER: Visitor Check-In Desk -->
   <div class="center-column">
     <div class="neu-card">
       <div class="header">
-        <img src="logo.png" alt="ICFAI Foundation for Higher Education" onerror="this.style.display='none'">
+        <img src="logo.png" alt="ICFAI Foundation for Higher Education, Bangalore" onerror="this.style.display='none'">
         <h3 style="color:var(--primary); margin: 4px 0 2px 0; font-size:18.5px;">Student Service Department (SSD)</h3>
         <p style="color:#64748b; font-size: 13px; margin:0;">Visitor Enquiry & Check-in Desk</p>
       </div>
@@ -378,7 +377,7 @@
         <button class="tab-btn" id="tabGeneral" type="button" onclick="switchTab('general')">General Enquiry</button>
       </div>
 
-      <!-- 1. Student Form (Auto-clears completely when enrollment is deleted/backspaced) -->
+      <!-- 1. Student Form (Auto-clears completely on backspace) -->
       <form id="studentForm">
         <label style="font-size:12.5px; font-weight:600;">Enrollment Number</label>
         <input type="text" id="stuEnroll" class="neu-input" placeholder="e.g. 26BSOCBL0001" oninput="handleStudentEnrollInput()" required>
@@ -470,10 +469,9 @@
     </div>
   </div>
 
-  <!-- RIGHT COLUMN: Multi-Stream Announcements with Prominent Centered Badges -->
+  <!-- RIGHT COLUMN: Centered-Badge Announcements -->
   <div class="side-column-right" id="announcementsColumn">
     
-    <!-- 1. Common Announcement Card -->
     <div id="cardAnnCommon" class="announcement-card ann-common" style="display:none;">
       <div class="ann-badge badge-common">General Announcement</div>
       <div class="ann-title" id="annTitleCommon">Announcement</div>
@@ -482,7 +480,6 @@
       </div>
     </div>
 
-    <!-- 2. UG Announcement Card -->
     <div id="cardAnnUG" class="announcement-card ann-ug" style="display:none;">
       <div class="ann-badge badge-ug">UG Announcement (BCA / BBA LLB)</div>
       <div class="ann-title" id="annTitleUG">UG Notice</div>
@@ -491,7 +488,6 @@
       </div>
     </div>
 
-    <!-- 3. MBA Announcement Card -->
     <div id="cardAnnMBA" class="announcement-card ann-mba" style="display:none;">
       <div class="ann-badge badge-mba">MBA Announcement</div>
       <div class="ann-title" id="annTitleMBA">MBA Notice</div>
@@ -500,7 +496,6 @@
       </div>
     </div>
 
-    <!-- Right Side Spillover for Staff Announcements -->
     <div id="rightStaffAnnouncements" style="display:flex; flex-direction:column; gap:14px;"></div>
 
   </div>
@@ -717,7 +712,6 @@
   }
 
   function renderAnnouncements() {
-    // 1. Common
     const commonCard = document.getElementById('cardAnnCommon');
     const commonActive = broadcastState.commonActive || (broadcastState.active && !broadcastState.commonTitle);
     const commonTitle = broadcastState.commonTitle || broadcastState.title || 'Announcement';
@@ -733,7 +727,6 @@
       commonCard.style.display = 'none';
     }
 
-    // 2. UG
     const ugCard = document.getElementById('cardAnnUG');
     if (broadcastState.ugActive && broadcastState.ugMessage) {
       document.getElementById('annTitleUG').innerText = broadcastState.ugTitle || 'UG Notice';
@@ -745,7 +738,6 @@
       ugCard.style.display = 'none';
     }
 
-    // 3. MBA
     const mbaCard = document.getElementById('cardAnnMBA');
     if (broadcastState.mbaActive && broadcastState.mbaMessage) {
       document.getElementById('annTitleMBA').innerText = broadcastState.mbaTitle || 'MBA Notice';
@@ -800,7 +792,7 @@
     }
   }
 
-  // Auto-clear inputs completely when enrollment number is backspaced or emptied
+  // Clear all auto-populated fields if enrollment input is backspaced / emptied
   function handleStudentEnrollInput() {
     const v = document.getElementById('stuEnroll').value.trim().toUpperCase();
     if (!v) {
