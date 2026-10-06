@@ -72,19 +72,20 @@
     
     .nav-tabs {
       display: flex;
-      gap: 15px;
+      gap: 12px;
       margin-bottom: 25px;
       background: var(--bg);
       padding: 6px;
       border-radius: 16px;
       box-shadow: inset 4px 4px 8px var(--dark-shadow), inset -4px -4px 8px var(--light-shadow);
+      width: 100%;
     }
     .nav-btn {
       flex: 1;
-      padding: 14px;
+      padding: 13px;
       text-align: center;
       font-weight: 700;
-      font-size: 15px;
+      font-size: 14.5px;
       color: var(--subtext);
       border-radius: 12px;
       cursor: pointer;
@@ -98,10 +99,9 @@
       box-shadow: 4px 4px 10px var(--dark-shadow), -4px -4px 10px var(--light-shadow);
     }
     
-    /* Responsive Top KPI Grid */
     .kpi-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 14px;
       margin-bottom: 24px;
     }
@@ -157,6 +157,70 @@
       font-weight: 700;
       padding: 2px 4px;
       border-radius: 4px;
+    }
+
+    /* Academic Heatmap Matrix Styles */
+    .heatmap-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 6px;
+      margin-top: 14px;
+    }
+    .heatmap-th {
+      padding: 10px;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--subtext);
+      text-align: center;
+    }
+    .heatmap-cell {
+      padding: 14px 10px;
+      border-radius: 10px;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+    .heatmap-cell:hover { transform: scale(1.05); }
+
+    /* Student 360 Timeline Styles */
+    .timeline-container {
+      position: relative;
+      padding-left: 28px;
+      margin-top: 18px;
+    }
+    .timeline-container::before {
+      content: '';
+      position: absolute;
+      left: 10px;
+      top: 8px;
+      bottom: 8px;
+      width: 3px;
+      background: #cbd5e1;
+      border-radius: 2px;
+    }
+    .timeline-card {
+      position: relative;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.03);
+    }
+    .timeline-card::before {
+      content: '';
+      position: absolute;
+      left: -23px;
+      top: 16px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 0 2px var(--accent);
     }
 
     .editor-toolbar {
@@ -226,7 +290,6 @@
       box-sizing: border-box;
     }
 
-    /* Motion Welcome Toast */
     #welcomeToastOverlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -273,7 +336,6 @@
 </head>
 <body>
 
-<!-- Motion Welcome Greeting Toast for SSD Head -->
 <div id="welcomeToastOverlay">
   <div class="welcome-card" id="welcomeToastBox">
     <div style="width:64px; height:64px; border-radius:50%; background:#dbeafe; display:flex; align-items:center; justify-content:center; margin: 0 auto 16px auto; box-shadow: inset 3px 3px 6px var(--dark-shadow), inset -3px -3px 6px var(--light-shadow);">
@@ -287,7 +349,7 @@
 
 <div id="headAuthOverlay">
   <div class="head-gate-box">
-    <img src="logo.png" alt="Logo" style="max-height:48px; margin-bottom:12px;" onerror="this.style.display='none'">
+    <img src="logo.png" alt="Logo" style="max-height:54px; max-width:280px; object-fit:contain; margin-bottom:12px;" onerror="this.style.display='none'">
     <h3 style="color:var(--primary); margin:0 0 6px 0;">Executive Analytics Portal</h3>
     <p style="font-size:13px; color:#64748b; margin-top:0;">Department Head Authorization Required</p>
 
@@ -307,7 +369,7 @@
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; flex-wrap:wrap; gap:15px;">
     <div>
       <h2 style="color:var(--primary); margin:0;">SSD Executive Portal</h2>
-      <p style="color:var(--subtext); font-size:13px; margin:4px 0 0 0;">Department Intelligence, Master Inquiry Queue & Administration</p>
+      <p style="color:var(--subtext); font-size:13px; margin:4px 0 0 0;">Department Intelligence, Student 360° Audits & Heatmaps</p>
     </div>
     <div style="display:flex; gap:10px;">
       <button class="neu-btn" type="button" onclick="exportMasterCSV()">Download Full Report (CSV)</button>
@@ -317,11 +379,12 @@
 
   <div class="nav-tabs">
     <button class="nav-btn active" id="tabNavAnalytics" onclick="switchMainTab('analytics')">Operational Analytics</button>
+    <button class="nav-btn" id="tabNavStudent360" onclick="switchMainTab('student360')">Student 360° Profile</button>
     <button class="nav-btn" id="tabNavMasterQueue" onclick="switchMainTab('masterqueue')">Master Office Queue</button>
     <button class="nav-btn" id="tabNavSettings" onclick="switchMainTab('settings')">Master Settings & Management</button>
   </div>
 
-  <!-- VIEW 1: ANALYTICS (With Unresolved Queries Banner & Elapsed Open TAT) -->
+  <!-- VIEW 1: ANALYTICS -->
   <div id="analyticsSection">
     
     <div class="kpi-row">
@@ -345,13 +408,11 @@
         <span style="font-size:11px; font-weight:700; color:#475569;">GENERAL VISITS</span>
         <div class="stat-val" id="kpiGeneral" style="color:#475569;">0</div>
       </div>
-      <!-- NEW: UNRESOLVED / PENDING QUERIES BANNER -->
       <div class="neu-card kpi-interactive" style="margin-bottom:0;" onclick="openDrilldown('Unresolved', 'Active / Unresolved Enquiries')">
         <span class="kpi-hint">VIEW ↗</span>
         <span style="font-size:11px; font-weight:700; color:var(--crimson);">UNRESOLVED QUERIES</span>
         <div class="stat-val" id="kpiUnresolved" style="color:var(--crimson);">0</div>
       </div>
-      <!-- NEW: TOTAL UNRESOLVED WAIT/ELAPSED TAT BANNER -->
       <div class="neu-card kpi-interactive" style="margin-bottom:0;" onclick="openDrilldown('Unresolved', 'Unresolved Open Wait Duration')">
         <span class="kpi-hint">VIEW ↗</span>
         <span style="font-size:11px; font-weight:700; color:#ea580c;">AVG OPEN WAIT</span>
@@ -370,6 +431,41 @@
         <span class="kpi-hint">VIEW ↗</span>
         <span style="font-size:11px; font-weight:700; color:var(--green);">RESOLUTION RATE</span>
         <div class="stat-val" id="kpiEff" style="color:var(--green);">0%</div>
+      </div>
+    </div>
+
+    <!-- Course & Semester Friction Heatmap Matrix -->
+    <div class="neu-card" style="margin-bottom: 24px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <div>
+          <h3 style="color:var(--primary); margin:0;">Program & Semester Inquiry Heatmap Matrix</h3>
+          <p style="font-size:13px; color:var(--subtext); margin:3px 0 0 0;">Identifies student friction points across degrees and academic semesters.</p>
+        </div>
+        <div style="display:flex; gap:10px; font-size:12px; font-weight:700; align-items:center;">
+          <span>Intensity:</span>
+          <span style="padding:3px 8px; border-radius:6px; background:#f1f5f9; color:#64748b;">Low (0-2)</span>
+          <span style="padding:3px 8px; border-radius:6px; background:#fef3c7; color:#b45309;">Moderate (3-9)</span>
+          <span style="padding:3px 8px; border-radius:6px; background:#fee2e2; color:#b91c1c;">High Friction (10+)</span>
+        </div>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="heatmap-table">
+          <thead>
+            <tr>
+              <th class="heatmap-th" style="text-align:left;">Program / Course</th>
+              <th class="heatmap-th">1st Sem</th>
+              <th class="heatmap-th">2nd Sem</th>
+              <th class="heatmap-th">3rd Sem</th>
+              <th class="heatmap-th">4th Sem</th>
+              <th class="heatmap-th">5th Sem+</th>
+              <th class="heatmap-th">Total Queries</th>
+            </tr>
+          </thead>
+          <tbody id="heatmapMatrixBody">
+            <tr><td colspan="7" style="padding:15px; text-align:center; color:#94a3b8;">Computing matrix...</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -440,7 +536,46 @@
     </div>
   </div>
 
-  <!-- VIEW 2: MASTER OFFICE QUEUE -->
+  <!-- VIEW 2: STUDENT 360° PROFILE -->
+  <div id="student360Section" style="display:none;">
+    <div class="neu-card">
+      <h3 style="color:var(--primary); margin-top:0;">Student 360° Complete Tenure Profile & Audit</h3>
+      <p style="font-size:13px; color:var(--subtext);">Search any enrollment number to inspect their full institutional visit timeline, staff interactions, and recurring concerns.</p>
+
+      <div style="display:flex; gap:12px; margin:16px 0; max-width:650px;">
+        <input type="text" id="search360Enroll" class="neu-inset" placeholder="Type enrollment no (e.g. 26BSOCBL0001, 25BSOCBL0296)...">
+        <button class="neu-btn" style="white-space:nowrap; color:var(--accent);" onclick="performStudent360Search()">Inspect History</button>
+      </div>
+
+      <!-- 360 Profile Summary Card -->
+      <div id="summary360Container" style="display:none; background:#f8fafc; border:1px solid #cbd5e1; border-radius:16px; padding:20px; margin-bottom:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+          <div>
+            <h2 id="name360" style="margin:0; color:var(--primary);">Student Name</h2>
+            <div style="font-size:14px; color:var(--subtext); margin-top:4px;">
+              Enrollment: <b id="enroll360" style="color:var(--accent);"></b> • Program: <b id="course360"></b> • Section: <b id="sec360"></b> • Semester: <b id="sem360"></b>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div id="totalVisitsBadge" style="background:#dbeafe; color:var(--accent); font-size:16px; font-weight:800; padding:6px 14px; border-radius:12px; display:inline-block;">0 Visits Logged</div>
+            <div id="repeatStatus360" style="font-size:12px; font-weight:700; color:var(--crimson); margin-top:4px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chronological Visit History Timeline -->
+      <div id="timeline360Container" style="display:none;">
+        <h4 style="color:var(--primary); margin:0;">Complete Department Interaction Timeline</h4>
+        <div class="timeline-container" id="timelineList"></div>
+      </div>
+
+      <div id="empty360State" style="text-align:center; padding:40px 0; color:#94a3b8;">
+        Type an enrollment number above to view the student's 360° history.
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW 3: MASTER OFFICE QUEUE -->
   <div id="masterQueueSection" style="display:none;">
     <div class="neu-card">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:15px;">
@@ -460,7 +595,7 @@
     </div>
   </div>
 
-  <!-- VIEW 3: MASTER SETTINGS -->
+  <!-- VIEW 4: MASTER SETTINGS -->
   <div id="settingsSection" style="display:none;">
     
     <div class="neu-card">
@@ -678,19 +813,17 @@
       </button>
     </div>
 
-    <!-- Staff Identity Configuration with EDIT + DELETE -->
+    <!-- Staff Identity Configuration -->
     <div class="neu-card">
       <h3 style="color:var(--primary); margin-top:0;">SSD Staff Profile Management</h3>
-      <p style="font-size:13px; color:var(--subtext);">
-        Add, rename, or remove staff desks. Updates synchronize immediately across all terminals.
-      </p>
+      <p style="font-size:13px; color:var(--subtext);">Add, rename, or remove staff desks.</p>
 
       <div style="display:flex; gap:12px; margin-bottom:18px;">
         <input type="text" id="newStaffInput" class="neu-inset" placeholder="Staff Name (e.g. Ms. Sudha - Officer)">
         <button class="neu-btn" type="button" onclick="addNewStaff()" style="white-space:nowrap; color:var(--green);">+ Add Profile</button>
       </div>
 
-      <label style="font-size:13px; font-weight:600;">Configured Desks (Click ✎ to edit, ✕ to remove):</label>
+      <label style="font-size:13px; font-weight:600;">Configured Desks:</label>
       <div id="staffChipContainer" style="margin-top:10px;"></div>
     </div>
 
@@ -720,10 +853,11 @@
               <th style="padding:8px 12px;">Course</th>
               <th style="padding:8px 12px;">Section</th>
               <th style="padding:8px 12px;">Semester</th>
+              <th style="padding:8px 12px; text-align:right;">360° Profile</th>
             </tr>
           </thead>
           <tbody id="studentTableBody">
-            <tr><td colspan="5" style="padding:15px; text-align:center; color:#94a3b8;">Loading student records...</td></tr>
+            <tr><td colspan="6" style="padding:15px; text-align:center; color:#94a3b8;">Loading student records...</td></tr>
           </tbody>
         </table>
       </div>
@@ -767,11 +901,11 @@
       </div>
     </div>
 
-    <!-- Bulk Directory Upload (Excel .xlsx / .xls or CSV) -->
+    <!-- Bulk Directory Upload -->
     <div class="neu-card">
       <h3 style="color:var(--primary); margin-top:0;">Bulk Directory Upload (Excel .xlsx / .xls or CSV)</h3>
       <p style="font-size:13px; color:var(--subtext); line-height:1.5;">
-        Upload standard Excel spreadsheets directly. The system automatically maps columns (Program/Course, Enrolno, Section, Semester) even if ordered differently or if fields are blank.
+        Upload standard Excel spreadsheets directly. The system automatically maps columns (Program/Course, Enrolno, Section, Semester).
       </p>
 
       <div class="grid-2">
@@ -805,7 +939,7 @@
 
 </div>
 
-<!-- Drill-down Inspection Modal with Elapsed Time & Date Filtering -->
+<!-- Drill-down Inspection Modal -->
 <div id="drilldownModal" class="modal-overlay" style="display:none;">
   <div class="neu-card" style="max-width: 980px; width: 100%; max-height: 85vh; display: flex; flex-direction: column;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px; border-bottom: 1px solid #cbd5e1; padding-bottom: 10px; flex-wrap:wrap; gap:10px;">
@@ -1022,9 +1156,11 @@
 
   function switchMainTab(tab) {
     document.getElementById('analyticsSection').style.display = tab === 'analytics' ? 'block' : 'none';
+    document.getElementById('student360Section').style.display = tab === 'student360' ? 'block' : 'none';
     document.getElementById('masterQueueSection').style.display = tab === 'masterqueue' ? 'block' : 'none';
     document.getElementById('settingsSection').style.display = tab === 'settings' ? 'block' : 'none';
     document.getElementById('tabNavAnalytics').classList.toggle('active', tab === 'analytics');
+    document.getElementById('tabNavStudent360').classList.toggle('active', tab === 'student360');
     document.getElementById('tabNavMasterQueue').classList.toggle('active', tab === 'masterqueue');
     document.getElementById('tabNavSettings').classList.toggle('active', tab === 'settings');
 
@@ -1063,6 +1199,14 @@
     let hourlyTraffic = { "09:00": 0, "10:00": 0, "11:00": 0, "12:00": 0, "13:00": 0, "14:00": 0, "15:00": 0, "16:00": 0, "17:00": 0 };
     let categoryCounts = { "Exams & Timetable": 0, "Fee & Clearance": 0, "Certificates & ID": 0, "Academics & Sections": 0, "General / Other": 0 };
 
+    // Heatmap Matrix mapping
+    let heatmapMatrix = {
+      "MBA": { "1st": 0, "2nd": 0, "3rd": 0, "4th": 0, "5th+": 0, total: 0 },
+      "BCA": { "1st": 0, "2nd": 0, "3rd": 0, "4th": 0, "5th+": 0, total: 0 },
+      "BBA LLB": { "1st": 0, "2nd": 0, "3rd": 0, "4th": 0, "5th+": 0, total: 0 },
+      "General / Other": { "1st": 0, "2nd": 0, "3rd": 0, "4th": 0, "5th+": 0, total: 0 }
+    };
+
     const stopWords = ["this", "that", "have", "from", "with", "what", "some", "please", "regarding", "about", "want", "need", "issue", "help", "detail", "details", "there", "query", "queries"];
     const nowTime = Date.now();
 
@@ -1094,6 +1238,24 @@
       } else {
         students++;
         mineKeywords(d.query, studentWords, stopWords);
+
+        // Map into Course & Semester Matrix
+        let cKey = "General / Other";
+        const cVal = (d.course || '').toUpperCase();
+        if (cVal.includes('MBA')) cKey = "MBA";
+        else if (cVal.includes('BCA')) cKey = "BCA";
+        else if (cVal.includes('BBA') || cVal.includes('LLB')) cKey = "BBA LLB";
+
+        let semSlot = "1st";
+        const sVal = (d.sem || '').toLowerCase();
+        if (sVal.includes('1')) semSlot = "1st";
+        else if (sVal.includes('2')) semSlot = "2nd";
+        else if (sVal.includes('3')) semSlot = "3rd";
+        else if (sVal.includes('4')) semSlot = "4th";
+        else semSlot = "5th+";
+
+        heatmapMatrix[cKey][semSlot]++;
+        heatmapMatrix[cKey].total++;
       }
 
       const s = d.assignedStaff || "No Staff Available";
@@ -1147,7 +1309,6 @@
     const avgTAT = resolvedWithTATCount > 0 ? (totalTATMinutes / resolvedWithTATCount).toFixed(1) + 'm' : 'N/A';
     document.getElementById('kpiTAT').innerText = avgTAT;
 
-    // Elapsed Open Wait calculation formatted in Hours or Mins
     let openWaitDisplay = '0m';
     if (unresolved > 0) {
       const avgWait = Math.round(totalOpenWaitMinutes / unresolved);
@@ -1160,13 +1321,127 @@
     document.getElementById('kpiOpenWait').innerText = openWaitDisplay;
 
     renderStaffTable(staffStats);
+    renderHeatmapMatrix(heatmapMatrix);
     renderAllCharts(dailyTimeline, students, faculty, general, hourlyTraffic, categoryCounts);
     renderKeywordStream('studentKeywords', studentWords, 'var(--accent)');
     renderKeywordStream('facultyKeywords', facultyWords, 'var(--crimson)');
     renderMasterQueue();
   });
 
-  // Drill-down Modal with Dynamic Date Filtering & Elapsed Wait Time
+  // Render Program & Semester Heatmap Table
+  function renderHeatmapMatrix(matrix) {
+    const tbody = document.getElementById('heatmapMatrixBody');
+    tbody.innerHTML = '';
+
+    Object.keys(matrix).forEach(courseName => {
+      const row = matrix[courseName];
+      tbody.innerHTML += `
+        <tr>
+          <td style="font-weight:700; color:var(--primary); padding:10px 14px; background:#f8fafc; border-radius:10px;">${courseName}</td>
+          <td class="heatmap-cell" style="${getHeatmapStyle(row['1st'])}" onclick="filterHeatmapClick('${courseName}', '1st')">${row['1st']}</td>
+          <td class="heatmap-cell" style="${getHeatmapStyle(row['2nd'])}" onclick="filterHeatmapClick('${courseName}', '2nd')">${row['2nd']}</td>
+          <td class="heatmap-cell" style="${getHeatmapStyle(row['3rd'])}" onclick="filterHeatmapClick('${courseName}', '3rd')">${row['3rd']}</td>
+          <td class="heatmap-cell" style="${getHeatmapStyle(row['4th'])}" onclick="filterHeatmapClick('${courseName}', '4th')">${row['4th']}</td>
+          <td class="heatmap-cell" style="${getHeatmapStyle(row['5th+'])}" onclick="filterHeatmapClick('${courseName}', '5th')">${row['5th+']}</td>
+          <td style="text-align:center; font-weight:800; font-size:15px; color:var(--accent); background:#f1f5f9; border-radius:10px;">${row.total}</td>
+        </tr>
+      `;
+    });
+  }
+
+  function getHeatmapStyle(val) {
+    if (val === 0) return 'background: #f1f5f9; color: #94a3b8;';
+    if (val <= 2) return 'background: #e0f2fe; color: #0369a1;';
+    if (val <= 9) return 'background: #fef3c7; color: #b45309;';
+    return 'background: #fee2e2; color: #b91c1c; font-weight:900;';
+  }
+
+  function filterHeatmapClick(course, sem) {
+    const title = `${course} - ${sem} Semester Inquiries`;
+    const filtered = masterRecords.filter(r => {
+      const c = (r.course || '').toUpperCase();
+      const s = (r.sem || '').toLowerCase();
+      const matchesCourse = (course === 'General / Other') ? (!c.includes('MBA') && !c.includes('BCA') && !c.includes('BBA')) : c.includes(course);
+      const matchesSem = s.includes(sem.replace(/[^0-9]/g, ''));
+      return r.type === 'Student' && matchesCourse && matchesSem;
+    });
+    currentDrilldownRecords = filtered;
+    renderDrilldownRows(filtered);
+    document.getElementById('drilldownTitle').innerText = title;
+    document.getElementById('drilldownModal').style.display = 'flex';
+  }
+
+  // Student 360° Profile Lookup & Timeline Construction
+  function performStudent360Search(enrParam = null) {
+    const searchVal = enrParam || document.getElementById('search360Enroll').value.trim().toUpperCase();
+    if (!searchVal) return alert("Please enter an enrollment number.");
+    document.getElementById('search360Enroll').value = searchVal;
+
+    const studentInfo = activeStudentList[searchVal] || { name: 'Enrolled Student', course: 'N/A', sec: 'N/A', sem: 'N/A' };
+    const visits = masterRecords.filter(r => (r.enrollment || '').toUpperCase() === searchVal);
+
+    document.getElementById('name360').innerText = studentInfo.name || (visits[0] ? visits[0].name : searchVal);
+    document.getElementById('enroll360').innerText = searchVal;
+    document.getElementById('course360').innerText = studentInfo.course || (visits[0] ? visits[0].course : 'MBA');
+    document.getElementById('sec360').innerText = studentInfo.sec || (visits[0] ? visits[0].sec : 'N/A');
+    document.getElementById('sem360').innerText = studentInfo.sem || (visits[0] ? visits[0].sem : 'N/A');
+
+    document.getElementById('totalVisitsBadge').innerText = `${visits.length} Visits Logged`;
+    if (visits.length > 1) {
+      document.getElementById('repeatStatus360').innerText = `⚠ Repeat Visitor Pattern Detected (${visits.length - 1} repeat visits)`;
+    } else {
+      document.getElementById('repeatStatus360').innerText = `First-Time / Standard Visitor`;
+    }
+
+    const timelineContainer = document.getElementById('timelineList');
+    timelineContainer.innerHTML = '';
+
+    if (!visits.length) {
+      timelineContainer.innerHTML = `<p style="color:#94a3b8; font-size:13px;">No front desk visits recorded in the current audit database for this student.</p>`;
+    } else {
+      visits.forEach((v, idx) => {
+        const dateObj = v.createdDate ? new Date(v.createdDate) : new Date();
+        const dateStr = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+        const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const isResolved = v.status === 'Resolved';
+
+        timelineContainer.innerHTML += `
+          <div class="timeline-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+              <div>
+                <span style="font-size:12px; font-weight:800; color:var(--primary); background:#e2e8f0; padding:2px 8px; border-radius:6px;">Visit #${visits.length - idx}</span>
+                <span style="font-size:13px; font-weight:700; margin-left:6px;">Desk: <b>${v.assignedStaff || 'Unassigned'}</b></span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:12px; font-weight:700; color:${isResolved ? 'var(--green)' : 'var(--crimson)'};">${v.status}</span>
+                <span style="font-size:12px; color:var(--subtext);">${dateStr} at ${timeStr}</span>
+              </div>
+            </div>
+
+            <div style="background:#ffffff; border:1px solid #e2e8f0; padding:12px; border-radius:10px; margin:10px 0; font-size:13px; color:#334155;">
+              <b>Query:</b> ${v.query}
+            </div>
+
+            ${v.solution ? `
+              <div style="font-size:12.5px; color:#1e293b; background:#f0fdf4; border:1px solid #bbf7d0; padding:8px 12px; border-radius:8px;">
+                <b>Staff Resolution Remarks:</b> ${v.solution} (TAT: ${v.handlingDurationMinutes || 1}m)
+              </div>
+            ` : '<div style="font-size:12px; color:var(--crimson);"><b>Status Note:</b> Query currently awaiting desk resolution.</div>'}
+          </div>
+        `;
+      });
+    }
+
+    document.getElementById('summary360Container').style.display = 'block';
+    document.getElementById('timeline360Container').style.display = 'block';
+    document.getElementById('empty360State').style.display = 'none';
+  }
+
+  function launch360FromDirectory(enr) {
+    switchMainTab('student360');
+    performStudent360Search(enr);
+  }
+
   function openDrilldown(type, title) {
     document.getElementById('drilldownTitle').innerText = title;
     document.getElementById('drilldownDateFilter').value = '';
@@ -1213,7 +1488,6 @@
       const badgeColor = r.status === 'Resolved' ? 'color:green;' : 'color:red;';
       const course = r.course || (r.type === 'Faculty' ? 'Faculty' : 'General');
       
-      // Calculate handling duration or active elapsed wait time
       let timeMetric = '';
       if (r.status === 'Resolved') {
         timeMetric = `<span style="color:var(--green); font-weight:700;">TAT: ${r.handlingDurationMinutes || 1}m</span>`;
@@ -1507,7 +1781,7 @@
     }
 
     if (!filtered.length) {
-      tbody.innerHTML = '<tr><td colspan="5" style="padding:15px; text-align:center; color:#94a3b8;">No matching student records found.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="padding:15px; text-align:center; color:#94a3b8;">No matching student records found.</td></tr>';
       return;
     }
 
@@ -1520,6 +1794,9 @@
           <td style="padding:8px 12px; font-weight:600; color:var(--primary);">${s.course || 'MBA'}</td>
           <td style="padding:8px 12px;">${s.sec || '<span style="color:#94a3b8;">N/A</span>'}</td>
           <td style="padding:8px 12px;">${s.sem || ''}</td>
+          <td style="padding:8px 12px; text-align:right;">
+            <button class="neu-btn" style="padding:4px 10px; font-size:11px; color:var(--accent);" onclick="launch360FromDirectory('${k}')">View 360°</button>
+          </td>
         </tr>
       `;
     });
