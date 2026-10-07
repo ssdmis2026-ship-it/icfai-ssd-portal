@@ -9,6 +9,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     :root {
       --bg: #e2e8f0;
@@ -72,26 +73,29 @@
     
     .nav-tabs {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       margin-bottom: 25px;
       background: var(--bg);
       padding: 6px;
       border-radius: 16px;
       box-shadow: inset 4px 4px 8px var(--dark-shadow), inset -4px -4px 8px var(--light-shadow);
       width: 100%;
+      overflow-x: auto;
     }
     .nav-btn {
       flex: 1;
+      min-width: 160px;
       padding: 13px;
       text-align: center;
       font-weight: 700;
-      font-size: 14.5px;
+      font-size: 14px;
       color: var(--subtext);
       border-radius: 12px;
       cursor: pointer;
       border: none;
       background: transparent;
       transition: all 0.2s ease;
+      white-space: nowrap;
     }
     .nav-btn.active {
       background: var(--bg);
@@ -159,7 +163,6 @@
       border-radius: 4px;
     }
 
-    /* Academic Heatmap Matrix Styles */
     .heatmap-table {
       width: 100%;
       border-collapse: separate;
@@ -185,7 +188,6 @@
     }
     .heatmap-cell:hover { transform: scale(1.05); }
 
-    /* Student 360 Timeline Styles */
     .timeline-container {
       position: relative;
       padding-left: 28px;
@@ -343,13 +345,13 @@
     </div>
     <h2 style="color:var(--primary); margin:0 0 8px 0; font-size:24px;">Welcome, Department Head!</h2>
     <p style="font-size:16px; font-weight:700; color:var(--accent); margin:0 0 8px 0;">Executive Intelligence & Control Portal</p>
-    <div style="font-size:13px; color:var(--subtext);">Synchronizing department metrics, queues, and settings...</div>
+    <div style="font-size:13px; color:var(--subtext);">Synchronizing department metrics, historical archives & heatmaps...</div>
   </div>
 </div>
 
 <div id="headAuthOverlay">
   <div class="head-gate-box">
-    <img src="logo.png" alt="Logo" style="max-height:54px; max-width:280px; object-fit:contain; margin-bottom:12px;" onerror="this.style.display='none'">
+    <img id="headGateLogo" src="logo.png" alt="Logo" style="max-height:54px; max-width:280px; object-fit:contain; margin-bottom:12px;" onerror="this.src='logo.png'">
     <h3 style="color:var(--primary); margin:0 0 6px 0;">Executive Analytics Portal</h3>
     <p style="font-size:13px; color:#64748b; margin-top:0;">Department Head Authorization Required</p>
 
@@ -364,27 +366,51 @@
   </div>
 </div>
 
+<!-- 4-Month Archival Prompt Modal -->
+<div id="headArchiveModal" class="modal-overlay">
+  <div class="neu-card" style="max-width: 550px; width: 100%; text-align: center;">
+    <div style="font-size:40px; margin-bottom:10px;">📦</div>
+    <h3 style="color:var(--primary); margin:0 0 8px 0;">4-Month Semester Archival Required</h3>
+    <p style="font-size:13.5px; color:#334155; line-height:1.5;">
+      The 4-month operational period has elapsed. To keep the live database and frontend portals lightweight, download the offline audit file and reset historical records.
+    </p>
+    <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:12px; font-size:12.5px; color:#1e40af; margin:15px 0;">
+      Step 1: Download the complete database audit file.<br>
+      Step 2: Confirm database reset (Student directory & staff profiles are permanently preserved).
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="neu-btn" style="flex:1; color:var(--accent);" onclick="execute4MonthDownloadAndReset()">Download & Reset Cycle</button>
+      <button class="neu-btn" style="flex:1;" onclick="closeHeadArchiveModal()">Remind Me Tomorrow</button>
+    </div>
+  </div>
+</div>
+
 <div id="executiveContentWrapper" style="display:none; max-width: 1280px; width: 100%; margin: auto;">
   
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; flex-wrap:wrap; gap:15px;">
-    <div>
-      <h2 style="color:var(--primary); margin:0;">SSD Executive Portal</h2>
-      <p style="color:var(--subtext); font-size:13px; margin:4px 0 0 0;">Department Intelligence, Student 360° Audits & Heatmaps</p>
+    <div style="display:flex; align-items:center; gap:16px;">
+      <img id="headHeaderLogo" src="logo.png" alt="ICFAI" style="max-height:50px; max-width:220px; object-fit:contain;" onerror="this.src='logo.png'">
+      <div>
+        <h2 style="color:var(--primary); margin:0;">SSD Executive Portal</h2>
+        <p style="color:var(--subtext); font-size:13px; margin:4px 0 0 0;">Department Intelligence, Student 360° Audits & Historical Archive Analysis</p>
+      </div>
     </div>
-    <div style="display:flex; gap:10px;">
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
       <button class="neu-btn" type="button" onclick="exportMasterCSV()">Download Full Report (CSV)</button>
+      <button class="neu-btn" type="button" style="color:var(--green);" onclick="printExecutiveReportPDF()">Export Dossier (PDF)</button>
       <button class="neu-btn" type="button" onclick="location.reload()">Lock Session</button>
     </div>
   </div>
 
   <div class="nav-tabs">
     <button class="nav-btn active" id="tabNavAnalytics" onclick="switchMainTab('analytics')">Operational Analytics</button>
+    <button class="nav-btn" id="tabNavArchiveAnalyzer" onclick="switchMainTab('archiveAnalyzer')">Historical Archive Analyzer</button>
     <button class="nav-btn" id="tabNavStudent360" onclick="switchMainTab('student360')">Student 360° Profile</button>
     <button class="nav-btn" id="tabNavMasterQueue" onclick="switchMainTab('masterqueue')">Master Office Queue</button>
     <button class="nav-btn" id="tabNavSettings" onclick="switchMainTab('settings')">Master Settings & Management</button>
   </div>
 
-  <!-- VIEW 1: ANALYTICS -->
+  <!-- VIEW 1: LIVE ANALYTICS -->
   <div id="analyticsSection">
     
     <div class="kpi-row">
@@ -536,7 +562,42 @@
     </div>
   </div>
 
-  <!-- VIEW 2: STUDENT 360° PROFILE -->
+  <!-- VIEW 2: HISTORICAL ARCHIVE ANALYZER -->
+  <div id="archiveAnalyzerSection" style="display:none;">
+    <div class="neu-card">
+      <h3 style="color:var(--primary); margin-top:0;">Historical 4-Month Archive Deep-Dive Analyzer</h3>
+      <p style="font-size:13px; color:var(--subtext); margin-bottom:15px;">
+        Upload any previously exported semester CSV archive to reconstruct charts, text analytics, heatmaps, and staff appraisals offline for presentations to the College Head.
+      </p>
+
+      <div style="background:#f8fafc; border:1px dashed #cbd5e1; padding:20px; border-radius:14px; text-align:center;">
+        <input type="file" id="archiveFileInput" accept=".csv" class="neu-inset" style="max-width:400px; margin:auto;">
+        <button class="neu-btn" style="margin-top:12px; color:var(--accent);" onclick="processHistoricalArchiveFile()">Analyze Archive File</button>
+      </div>
+
+      <div id="archiveAnalyticsOutput" style="display:none; margin-top:25px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #cbd5e1; padding-bottom:8px;">
+          <h4 id="archiveReportTitle" style="color:var(--primary); margin:0;">Historical Analysis Overview</h4>
+          <button class="neu-btn" style="color:var(--green); font-size:12px; padding:6px 14px;" onclick="printArchiveDossierPDF()">Export Presentation PDF</button>
+        </div>
+
+        <div class="kpi-row" id="archiveKpis"></div>
+
+        <div class="grid-2" style="margin-top:20px;">
+          <div class="neu-card" style="margin-bottom:0;">
+            <h4 style="color:var(--primary); margin:0 0 10px 0;">Archived Influx Volume</h4>
+            <div class="chart-box"><canvas id="archiveTimelineChart"></canvas></div>
+          </div>
+          <div class="neu-card" style="margin-bottom:0;">
+            <h4 style="color:var(--purple); margin:0 0 10px 0;">Archived Peak Traffic Hours</h4>
+            <div class="chart-box"><canvas id="archiveHourlyChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW 3: STUDENT 360° PROFILE -->
   <div id="student360Section" style="display:none;">
     <div class="neu-card">
       <h3 style="color:var(--primary); margin-top:0;">Student 360° Complete Tenure Profile & Audit</h3>
@@ -547,7 +608,6 @@
         <button class="neu-btn" style="white-space:nowrap; color:var(--accent);" onclick="performStudent360Search()">Inspect History</button>
       </div>
 
-      <!-- 360 Profile Summary Card -->
       <div id="summary360Container" style="display:none; background:#f8fafc; border:1px solid #cbd5e1; border-radius:16px; padding:20px; margin-bottom:20px;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
           <div>
@@ -563,7 +623,6 @@
         </div>
       </div>
 
-      <!-- Chronological Visit History Timeline -->
       <div id="timeline360Container" style="display:none;">
         <h4 style="color:var(--primary); margin:0;">Complete Department Interaction Timeline</h4>
         <div class="timeline-container" id="timelineList"></div>
@@ -575,7 +634,7 @@
     </div>
   </div>
 
-  <!-- VIEW 3: MASTER OFFICE QUEUE -->
+  <!-- VIEW 4: MASTER OFFICE QUEUE -->
   <div id="masterQueueSection" style="display:none;">
     <div class="neu-card">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:15px;">
@@ -595,9 +654,39 @@
     </div>
   </div>
 
-  <!-- VIEW 4: MASTER SETTINGS -->
+  <!-- VIEW 5: MASTER SETTINGS -->
   <div id="settingsSection" style="display:none;">
     
+    <!-- Dynamic College Logo Changer Panel -->
+    <div class="neu-card">
+      <h3 style="color:var(--primary); margin-top:0;">Institution Branding & Logo Management</h3>
+      <p style="font-size:13px; color:var(--subtext);">
+        Upload a transparent PNG official logo. Updating this updates the logo across the Front Desk Kiosk, Staff Workstation, and this Executive Portal in real time.
+      </p>
+
+      <div style="display:flex; gap:20px; align-items:center; flex-wrap:wrap; background:#f8fafc; padding:18px; border-radius:14px;">
+        <div style="border:1px dashed #cbd5e1; padding:10px; border-radius:12px; background:#ffffff;">
+          <img id="currentLogoPreview" src="logo.png" alt="Current Logo" style="max-height:54px; max-width:280px; object-fit:contain;" onerror="this.src='logo.png'">
+        </div>
+        <div style="flex:1; min-width:260px;">
+          <label style="font-size:12px; font-weight:700; color:var(--subtext);">Select New PNG Logo File:</label>
+          <input type="file" id="logoFileInput" accept="image/png, image/jpeg" class="neu-inset" style="margin-top:6px; margin-bottom:10px;">
+          <button class="neu-btn" type="button" style="color:var(--green);" onclick="uploadNewInstitutionLogo()">Upload & Update Logo Everywhere</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4-Month Database Archival Control Center -->
+    <div class="neu-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div>
+          <h3 style="color:var(--primary); margin:0;">Semester Cycle & 4-Month Auto-Archival</h3>
+          <p style="font-size:13px; color:var(--subtext); margin:4px 0 0 0;">Cycle status: <b id="cycleDaysElapsed" style="color:var(--accent);">Calculating...</b></p>
+        </div>
+        <button class="neu-btn" type="button" style="color:var(--crimson);" onclick="execute4MonthDownloadAndReset()">Manual Semester Archival & Reset</button>
+      </div>
+    </div>
+
     <div class="neu-card">
       <h3 style="color:var(--primary); margin-top:0;">Portal Security & Password Administration</h3>
       <p style="font-size:13px; color:var(--subtext);">Manage front desk authentication PINs and department head access.</p>
@@ -1017,11 +1106,108 @@
   let activeStudentList = {};
   let activeFacultyList = [];
   let currentDrilldownRecords = [];
+  let archivedRecords = [];
   
   let timelineChartInstance = null;
   let demographicsChartInstance = null;
   let hourlyTrafficChartInstance = null;
   let categoryChartInstance = null;
+  let archiveTimelineChartInstance = null;
+  let archiveHourlyChartInstance = null;
+
+  // Real-time Dynamic Logo Syncer
+  db.collection('settings').doc('branding').onSnapshot(doc => {
+    if (doc.exists && doc.data().logoDataUrl) {
+      const url = doc.data().logoDataUrl;
+      const gLogo = document.getElementById('headGateLogo');
+      const hLogo = document.getElementById('headHeaderLogo');
+      const pLogo = document.getElementById('currentLogoPreview');
+      if (gLogo) gLogo.src = url;
+      if (hLogo) hLogo.src = url;
+      if (pLogo) pLogo.src = url;
+    }
+  });
+
+  function uploadNewInstitutionLogo() {
+    const file = document.getElementById('logoFileInput').files[0];
+    if (!file) return alert("Please select a PNG logo image file first.");
+
+    if (file.size > 800000) {
+      return alert("Logo image is too large (Maximum allowed size: 800 KB). Please compress or resize the PNG.");
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const dataUrl = e.target.result;
+      db.collection('settings').doc('branding').set({
+        logoDataUrl: dataUrl,
+        updatedAt: new Date().toISOString()
+      }, { merge: true }).then(() => {
+        alert("Institution logo updated successfully. All visitor kiosks and staff terminals will update in real time.");
+      }).catch(err => alert("Error updating logo: " + err.message));
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // 4-Month Archival Check
+  db.collection('settings').doc('systemArchive').onSnapshot(doc => {
+    if (!doc.exists) {
+      db.collection('settings').doc('systemArchive').set({
+        lastArchivedTimestamp: Date.now(),
+        lastArchivedDate: new Date().toISOString()
+      });
+      document.getElementById('cycleDaysElapsed').innerText = "Cycle started today (0 / 120 days)";
+    } else {
+      const last = doc.data().lastArchivedTimestamp || Date.now();
+      const elapsedDays = Math.floor((Date.now() - last) / (1000 * 60 * 60 * 24));
+      document.getElementById('cycleDaysElapsed').innerText = `${elapsedDays} of 120 days elapsed`;
+
+      if (elapsedDays >= 120) {
+        document.getElementById('headArchiveModal').style.display = 'flex';
+      }
+    }
+  });
+
+  function closeHeadArchiveModal() {
+    document.getElementById('headArchiveModal').style.display = 'none';
+  }
+
+  async function execute4MonthDownloadAndReset() {
+    if (!confirm("Are you ready to download the 4-month database archive and reset live historical records?")) return;
+    
+    // 1. Export CSV
+    exportMasterCSV();
+
+    // 2. Wait 2 seconds for download, then prompt confirmation to purge
+    setTimeout(async () => {
+      if (!confirm("Did your browser successfully download the audit file? Click OK to reset historical records to keep the portal fast.")) return;
+      
+      const pwd = prompt("Enter SSD Head Master Password to authorize database cycle reset:");
+      if (pwd !== masterHeadPassword) return alert("Authorization failed. Reset aborted.");
+
+      // Purge all resolved enquiries
+      const batch = db.batch();
+      let deleteCount = 0;
+      masterRecords.forEach(r => {
+        if (r.docId) {
+          batch.delete(db.collection('enquiries').doc(r.docId));
+          deleteCount++;
+        }
+      });
+
+      await batch.commit();
+
+      // Reset timestamp tracker
+      await db.collection('settings').doc('systemArchive').set({
+        lastArchivedTimestamp: Date.now(),
+        lastArchivedDate: new Date().toISOString(),
+        purgedRecordsCount: deleteCount
+      });
+
+      closeHeadArchiveModal();
+      alert(`Semester cycle reset complete. Purged ${deleteCount} records. Portal is now completely fresh and lightweight for the next 4 months.`);
+    }, 2000);
+  }
 
   function execCmd(command, val = null) {
     document.execCommand(command, false, val);
@@ -1156,10 +1342,12 @@
 
   function switchMainTab(tab) {
     document.getElementById('analyticsSection').style.display = tab === 'analytics' ? 'block' : 'none';
+    document.getElementById('archiveAnalyzerSection').style.display = tab === 'archiveAnalyzer' ? 'block' : 'none';
     document.getElementById('student360Section').style.display = tab === 'student360' ? 'block' : 'none';
     document.getElementById('masterQueueSection').style.display = tab === 'masterqueue' ? 'block' : 'none';
     document.getElementById('settingsSection').style.display = tab === 'settings' ? 'block' : 'none';
     document.getElementById('tabNavAnalytics').classList.toggle('active', tab === 'analytics');
+    document.getElementById('tabNavArchiveAnalyzer').classList.toggle('active', tab === 'archiveAnalyzer');
     document.getElementById('tabNavStudent360').classList.toggle('active', tab === 'student360');
     document.getElementById('tabNavMasterQueue').classList.toggle('active', tab === 'masterqueue');
     document.getElementById('tabNavSettings').classList.toggle('active', tab === 'settings');
@@ -1199,7 +1387,6 @@
     let hourlyTraffic = { "09:00": 0, "10:00": 0, "11:00": 0, "12:00": 0, "13:00": 0, "14:00": 0, "15:00": 0, "16:00": 0, "17:00": 0 };
     let categoryCounts = { "Exams & Timetable": 0, "Fee & Clearance": 0, "Certificates & ID": 0, "Academics & Sections": 0, "General / Other": 0 };
 
-    // Heatmap Matrix mapping
     let heatmapMatrix = {
       "MBA": { "1st": 0, "2nd": 0, "3rd": 0, "4th": 0, "5th+": 0, total: 0 },
       "BCA": { "1st": 0, "2nd": 0, "3rd": 0, "4th": 0, "5th+": 0, total: 0 },
@@ -1239,7 +1426,6 @@
         students++;
         mineKeywords(d.query, studentWords, stopWords);
 
-        // Map into Course & Semester Matrix
         let cKey = "General / Other";
         const cVal = (d.course || '').toUpperCase();
         if (cVal.includes('MBA')) cKey = "MBA";
@@ -1328,7 +1514,6 @@
     renderMasterQueue();
   });
 
-  // Render Program & Semester Heatmap Table
   function renderHeatmapMatrix(matrix) {
     const tbody = document.getElementById('heatmapMatrixBody');
     tbody.innerHTML = '';
@@ -1371,7 +1556,101 @@
     document.getElementById('drilldownModal').style.display = 'flex';
   }
 
-  // Student 360° Profile Lookup & Timeline Construction
+  // Historical Archive File Analyzer Engine
+  function processHistoricalArchiveFile() {
+    const file = document.getElementById('archiveFileInput').files[0];
+    if (!file) return alert("Select a previously downloaded archive CSV file.");
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        archivedRecords = results.data;
+        if (!archivedRecords.length) return alert("Archive file is empty or corrupted.");
+        renderArchiveDashboard(file.name);
+      }
+    });
+  }
+
+  function renderArchiveDashboard(fileName) {
+    document.getElementById('archiveAnalyticsOutput').style.display = 'block';
+    document.getElementById('archiveReportTitle').innerText = "Historical Report: " + fileName;
+
+    let res = 0, stu = 0, fac = 0;
+    let hourly = { "09:00": 0, "10:00": 0, "11:00": 0, "12:00": 0, "13:00": 0, "14:00": 0, "15:00": 0, "16:00": 0, "17:00": 0 };
+    let timeline = {};
+
+    archivedRecords.forEach(r => {
+      if ((r.Status || '').toLowerCase().includes('resolved')) res++;
+      if ((r.Type || '').toLowerCase().includes('faculty')) fac++;
+      else if ((r.Type || '').toLowerCase().includes('student')) stu++;
+
+      const dateStr = r["Created Date"] || '';
+      if (dateStr) {
+        const dKey = dateStr.substring(0, 10);
+        timeline[dKey] = (timeline[dKey] || 0) + 1;
+        const h = new Date(dateStr).getHours();
+        const slot = (h < 10 ? '0' + h : String(h)) + ':00';
+        if (hourly[slot] !== undefined) hourly[slot]++;
+      }
+    });
+
+    const kpiEl = document.getElementById('archiveKpis');
+    kpiEl.innerHTML = `
+      <div class="neu-card" style="margin:0;"><span style="font-size:11px; font-weight:700; color:var(--subtext);">ARCHIVED INQUIRIES</span><div class="stat-val" style="color:var(--primary);">${archivedRecords.length}</div></div>
+      <div class="neu-card" style="margin:0;"><span style="font-size:11px; font-weight:700; color:var(--accent);">STUDENT QUERIES</span><div class="stat-val" style="color:var(--accent);">${stu}</div></div>
+      <div class="neu-card" style="margin:0;"><span style="font-size:11px; font-weight:700; color:var(--crimson);">FACULTY QUERIES</span><div class="stat-val" style="color:var(--crimson);">${fac}</div></div>
+      <div class="neu-card" style="margin:0;"><span style="font-size:11px; font-weight:700; color:var(--green);">RESOLUTION RATE</span><div class="stat-val" style="color:var(--green);">${Math.round((res / archivedRecords.length) * 100)}%</div></div>
+    `;
+
+    const dates = Object.keys(timeline).sort();
+    if (archiveTimelineChartInstance) archiveTimelineChartInstance.destroy();
+    archiveTimelineChartInstance = new Chart(document.getElementById('archiveTimelineChart'), {
+      type: 'line',
+      data: {
+        labels: dates,
+        datasets: [{ label: 'Inquiries', data: dates.map(d => timeline[d]), borderColor: '#2563eb', fill: true, backgroundColor: 'rgba(37,99,235,0.06)' }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+
+    const hours = Object.keys(hourly);
+    if (archiveHourlyChartInstance) archiveHourlyChartInstance.destroy();
+    archiveHourlyChartInstance = new Chart(document.getElementById('archiveHourlyChart'), {
+      type: 'bar',
+      data: {
+        labels: hours,
+        datasets: [{ label: 'Traffic', data: hours.map(h => hourly[h]), backgroundColor: '#7c3aed', borderRadius: 6 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+  }
+
+  function printArchiveDossierPDF() {
+    const el = document.getElementById('archiveAnalyticsOutput');
+    const opt = {
+      margin: 10,
+      filename: `SSD_Semester_Archive_Dossier_${new Date().toISOString().substring(0, 10)}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+    };
+    html2pdf().set(opt).from(el).save();
+  }
+
+  function printExecutiveReportPDF() {
+    const el = document.getElementById('analyticsSection');
+    const opt = {
+      margin: 10,
+      filename: `SSD_Executive_Audit_Report_${new Date().toISOString().substring(0, 10)}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+    };
+    html2pdf().set(opt).from(el).save();
+  }
+
+  // Student 360° Profile Lookup
   function performStudent360Search(enrParam = null) {
     const searchVal = enrParam || document.getElementById('search360Enroll').value.trim().toUpperCase();
     if (!searchVal) return alert("Please enter an enrollment number.");
