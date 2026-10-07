@@ -7,7 +7,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- PDF Engine for Staff Appraisal Export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     :root {
@@ -77,7 +77,7 @@
     
     .kpi-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
       gap: 16px;
       margin-bottom: 24px;
     }
@@ -91,9 +91,8 @@
       transition: transform 0.15s ease;
     }
     .kpi-card:hover { transform: translateY(-2px); }
-    .kpi-card:active { transform: translateY(0); }
     .kpi-card .label { font-size: 12px; font-weight: 700; color: var(--subtext); }
-    .kpi-card .val { font-size: 30px; font-weight: 800; margin-top: 6px; color: var(--primary); }
+    .kpi-card .val { font-size: 28px; font-weight: 800; margin-top: 6px; color: var(--primary); }
     .kpi-card .kpi-hint {
       position: absolute;
       top: 12px; right: 12px;
@@ -102,19 +101,21 @@
     
     .tab-bar {
       display: flex;
-      gap: 15px;
+      gap: 12px;
       margin-bottom: 20px;
       background: var(--bg);
       padding: 6px;
       border-radius: 16px;
       box-shadow: inset 4px 4px 8px var(--dark-shadow), inset -4px -4px 8px var(--light-shadow);
+      overflow-x: auto;
     }
     .tab-item {
       flex: 1;
-      padding: 14px;
+      min-width: 150px;
+      padding: 12px 16px;
       text-align: center;
       font-weight: 700;
-      font-size: 15px;
+      font-size: 14px;
       color: var(--subtext);
       border-radius: 12px;
       cursor: pointer;
@@ -124,12 +125,36 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
+      gap: 8px;
+      white-space: nowrap;
     }
     .tab-item.active {
       background: var(--bg);
       color: var(--primary);
       box-shadow: 4px 4px 10px var(--dark-shadow), -4px -4px 10px var(--light-shadow);
+    }
+    
+    .chart-box {
+      position: relative;
+      height: 220px;
+      width: 100%;
+    }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 800px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    .tag {
+      background: #f1f5f9;
+      padding: 6px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid #cbd5e1;
     }
     
     @keyframes steadyGlowPulse {
@@ -247,6 +272,17 @@
       100% { opacity: 0; transform: scale(0.85) translateY(-15px); }
     }
 
+    /* Fixed Print Layout Sheet to prevent PDF cut-offs */
+    #printDossierCanvas {
+      width: 800px;
+      background: #ffffff;
+      padding: 30px;
+      box-sizing: border-box;
+      color: #0f172a;
+      border-radius: 8px;
+      margin: auto;
+    }
+
     .subtle-footer {
       width: 100%;
       text-align: center;
@@ -279,10 +315,10 @@
     <div style="font-size:36px; margin-bottom:8px;">⏳</div>
     <h3 style="color:var(--amber); margin:0 0 8px 0;">Semester Cycle Complete (4 Months Elapsed)</h3>
     <p style="font-size:13.5px; color:#334155; line-height:1.5;">
-      The 4-month operational period has elapsed. To keep the portal lightweight and running smoothly, the SSD Head must run the end-of-cycle export and reset.
+      The 4-month operational period has elapsed. To keep the portal lightweight, the SSD Head must run the end-of-cycle export and reset.
     </p>
     <div style="background:#fef3c7; border:1px solid #fde68a; border-radius:12px; padding:12px; font-size:12.5px; color:#92400e; margin: 15px 0;">
-      Please notify the SSD Head to complete the archival in the Executive Portal. You can also download a copy of your personal inquiries now.
+      Please notify the SSD Head to complete the archival in the Executive Portal. You can download a copy of your personal inquiries now.
     </div>
     <div style="display:flex; gap:10px;">
       <button class="neu-btn" style="flex:1; color:var(--accent);" onclick="exportMyStaffCSV()">Download My Inquiries</button>
@@ -291,12 +327,12 @@
   </div>
 </div>
 
-<!-- Login Card with College Logo -->
-<div class="neu-card" id="loginBox" style="max-width: 450px; margin: 40px auto; text-align: center;">
-  <div style="margin-bottom: 12px;">
-    <img id="staffLoginLogo" src="logo.png" alt="ICFAI Foundation for Higher Education" style="max-height: 58px; max-width: 290px; width: auto; object-fit: contain;" onerror="this.src='logo.png'">
+<!-- Login Card with Official College Logo -->
+<div class="neu-card" id="loginBox" style="max-width: 460px; margin: 40px auto; text-align: center;">
+  <div style="margin-bottom: 15px;">
+    <img id="staffLoginLogo" src="logo.png" alt="ICFAI Foundation for Higher Education" style="max-height: 60px; max-width: 300px; width: auto; object-fit: contain;" onerror="this.src='logo.png'">
   </div>
-  <h2 style="color:var(--primary); margin:0 0 6px 0; font-size:20px;">SSD Staff Terminal</h2>
+  <h2 style="color:var(--primary); margin:0 0 6px 0; font-size:21px;">SSD Staff Terminal</h2>
   <p style="color:var(--subtext); font-size:13px; margin-top:0;">Authenticate to access your workstation</p>
   
   <div style="text-align:left; margin-top: 15px;">
@@ -332,7 +368,7 @@
 </div>
 
 <!-- Main Desk Interface -->
-<div id="deskView" style="display:none; max-width: 1050px; width:100%; margin: auto;">
+<div id="deskView" style="display:none; max-width: 1100px; width:100%; margin: auto;">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; flex-wrap:wrap; gap:12px;">
     <div style="display:flex; align-items:center; gap:16px;">
       <img id="staffHeaderLogo" src="logo.png" alt="ICFAI" style="max-height:48px; max-width:190px; object-fit:contain;" onerror="this.src='logo.png'">
@@ -352,9 +388,6 @@
       <button onclick="openStaffNoticeModal()" type="button" class="neu-btn" style="color:var(--teal);">
         Desk Notice
       </button>
-      <button onclick="openAppraisalModal()" type="button" class="neu-btn" style="color:var(--purple);">
-        My Appraisal Dossier
-      </button>
       <button onclick="exportMyStaffCSV()" type="button" class="neu-btn" style="color:var(--accent);">
         Download My Queries
       </button>
@@ -364,56 +397,185 @@
     </div>
   </div>
 
-  <div class="kpi-row">
-    <div class="kpi-card" onclick="openStaffDrilldown('Student', 'Assigned Student Queries')">
-      <span class="kpi-hint">VIEW ↗</span>
-      <div class="label">OPEN STUDENT QUERIES</div>
-      <div class="val" id="studentCount" style="color:var(--accent);">0</div>
-    </div>
-    <div class="kpi-card" id="facKpiCard" onclick="openStaffDrilldown('Faculty', 'Assigned Faculty Inquiries')">
-      <span class="kpi-hint">VIEW ↗</span>
-      <div class="label">OPEN FACULTY QUERIES</div>
-      <div class="val" id="facultyCount" style="color:var(--crimson);">0</div>
-    </div>
-    <div class="kpi-card" onclick="openStaffDrilldown('ALL', 'All Pending Inquiries')">
-      <span class="kpi-hint">VIEW ↗</span>
-      <div class="label">TOTAL PENDING</div>
-      <div class="val" id="totalCount">0</div>
-    </div>
-  </div>
-
   <div class="tab-bar">
-    <button class="tab-item active" id="btnStudentTab" type="button" onclick="switchDeskTab('student')">
-      <span>Student Queue</span>
-      <span class="counter-badge" id="badgeStudent" style="background:#dbeafe; color:var(--accent);">0</span>
+    <button class="tab-item active" id="btnTabLiveQueue" type="button" onclick="switchMainStaffTab('queue')">
+      <span>Live Desk Queue</span>
     </button>
-    <button class="tab-item" id="btnFacultyTab" type="button" onclick="switchDeskTab('faculty')">
-      <span>Faculty Inquiries</span>
-      <span class="counter-badge" id="badgeFaculty" style="background:#fee2e2; color:var(--crimson);">0</span>
+    <button class="tab-item" id="btnTabMyAnalytics" type="button" onclick="switchMainStaffTab('analytics')">
+      <span>My Performance Dossier</span>
+    </button>
+    <button class="tab-item" id="btnTabStaffArchive" type="button" onclick="switchMainStaffTab('archive')">
+      <span>Historical Archive Analyzer</span>
     </button>
   </div>
 
-  <div id="studentSection" class="neu-card">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 18px; border-bottom: 1px solid #cbd5e1; padding-bottom: 10px;">
-      <h3 style="margin:0; color:var(--primary);">Active Student Enquiries</h3>
-      <span style="font-size:13px; color:var(--subtext);">First-in First-out Queue</span>
+  <!-- SECTION 1: LIVE QUEUE WORKSPACE -->
+  <div id="staffQueueSection">
+    <div class="kpi-row">
+      <div class="kpi-card" onclick="openStaffDrilldown('Student', 'Assigned Student Queries')">
+        <span class="kpi-hint">VIEW ↗</span>
+        <div class="label">OPEN STUDENT QUERIES</div>
+        <div class="val" id="studentCount" style="color:var(--accent);">0</div>
+      </div>
+      <div class="kpi-card" id="facKpiCard" onclick="openStaffDrilldown('Faculty', 'Assigned Faculty Inquiries')">
+        <span class="kpi-hint">VIEW ↗</span>
+        <div class="label">OPEN FACULTY QUERIES</div>
+        <div class="val" id="facultyCount" style="color:var(--crimson);">0</div>
+      </div>
+      <div class="kpi-card" onclick="openStaffDrilldown('ALL', 'All Pending Inquiries')">
+        <span class="kpi-hint">VIEW ↗</span>
+        <div class="label">TOTAL PENDING</div>
+        <div class="val" id="totalCount">0</div>
+      </div>
     </div>
-    <div id="studentListContainer">
-      <p style="color:#94a3b8; text-align:center; padding:30px 0;">No pending student enquiries.</p>
+
+    <div style="display:flex; gap:12px; margin-bottom:15px;">
+      <button class="neu-btn" id="btnStudentSubTab" style="flex:1; justify-content:center;" onclick="switchSubQueue('student')">
+        Student Queue (<span id="badgeStudent">0</span>)
+      </button>
+      <button class="neu-btn" id="btnFacultySubTab" style="flex:1; justify-content:center;" onclick="switchSubQueue('faculty')">
+        Faculty Queue (<span id="badgeFaculty">0</span>)
+      </button>
+    </div>
+
+    <div id="studentContainerBox" class="neu-card">
+      <h3 style="margin:0 0 14px 0; color:var(--primary);">Active Student Enquiries</h3>
+      <div id="studentListContainer">
+        <p style="color:#94a3b8; text-align:center; padding:30px 0;">No pending student enquiries.</p>
+      </div>
+    </div>
+
+    <div id="facultyContainerBox" class="neu-card" style="display:none;">
+      <h3 style="margin:0 0 14px 0; color:var(--crimson);">Faculty Direct Inquiries</h3>
+      <div id="facultyListContainer">
+        <p style="color:#94a3b8; text-align:center; padding:30px 0;">No pending faculty enquiries.</p>
+      </div>
     </div>
   </div>
 
-  <div id="facultySection" class="neu-card" style="display:none;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 18px; border-bottom: 1px solid #cbd5e1; padding-bottom: 10px;">
-      <h3 style="margin:0; color:var(--crimson);">Faculty Direct Inquiries</h3>
-      <span style="font-size:13px; color:var(--subtext);">High Priority Staff Line</span>
+  <!-- SECTION 2: MY INDIVIDUAL PERFORMANCE DOSSIER (LIVE PERFORMANCE AUDIT) -->
+  <div id="staffAnalyticsSection" style="display:none;">
+    <div class="neu-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:1px solid #cbd5e1; padding-bottom:10px;">
+        <div>
+          <h3 style="color:var(--primary); margin:0;">Personal Performance Audit & Appraisal</h3>
+          <p style="font-size:13px; color:var(--subtext); margin:3px 0 0 0;">Comprehensive evaluation of queries handled at your desk.</p>
+        </div>
+        <button class="neu-btn" style="color:var(--green);" onclick="printLiveStaffDossierPDF()">Download Appraisal Dossier (PDF)</button>
+      </div>
+
+      <!-- Printable Area -->
+      <div id="liveStaffPrintWrapper">
+        <div id="printDossierCanvas">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #1e3a8a; padding-bottom:10px; margin-bottom:20px;">
+            <div>
+              <h2 style="color:#1e3a8a; margin:0; font-size:22px;">SSD Staff Performance Evaluation Dossier</h2>
+              <div style="font-size:12.5px; color:#475569; margin-top:2px;">ICFAI Student Service Department • Official Appraisal Record</div>
+            </div>
+            <div style="text-align:right;">
+              <div id="liveDossierStaffName" style="font-size:16px; font-weight:800; color:#1e3a8a;">Officer Profile</div>
+              <div id="liveDossierDate" style="font-size:12px; color:#64748b;">Generated: 2026</div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:22px;">
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px; border-radius:10px; text-align:center;">
+              <div style="font-size:11px; font-weight:700; color:#64748b;">TOTAL ASSIGNED</div>
+              <div id="liveDossierTotal" style="font-size:22px; font-weight:800; color:#1e3a8a; margin-top:4px;">0</div>
+            </div>
+            <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:12px; border-radius:10px; text-align:center;">
+              <div style="font-size:11px; font-weight:700; color:#166534;">RESOLVED QUERIES</div>
+              <div id="liveDossierResolved" style="font-size:22px; font-weight:800; color:#16a34a; margin-top:4px;">0</div>
+            </div>
+            <div style="background:#fef2f2; border:1px solid #fecaca; padding:12px; border-radius:10px; text-align:center;">
+              <div style="font-size:11px; font-weight:700; color:#991b1b;">RESOLUTION RATE</div>
+              <div id="liveDossierRate" style="font-size:22px; font-weight:800; color:#dc2626; margin-top:4px;">0%</div>
+            </div>
+            <div style="background:#eff6ff; border:1px solid #bfdbfe; padding:12px; border-radius:10px; text-align:center;">
+              <div style="font-size:11px; font-weight:700; color:#1e40af;">AVG SPEED (TAT)</div>
+              <div id="liveDossierTAT" style="font-size:22px; font-weight:800; color:#2563eb; margin-top:4px;">0m</div>
+            </div>
+          </div>
+
+          <h4 style="color:#1e3a8a; margin:0 0 8px 0; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">Complete Interaction History</h4>
+          <table style="width:100%; border-collapse:collapse; font-size:11.5px; text-align:left;">
+            <thead>
+              <tr style="background:#f1f5f9; color:#475569;">
+                <th style="padding:7px;">Visitor Name</th>
+                <th style="padding:7px;">Enroll / Details</th>
+                <th style="padding:7px;">Query Summary</th>
+                <th style="padding:7px;">Resolution Remarks</th>
+                <th style="padding:7px;">TAT</th>
+              </tr>
+            </thead>
+            <tbody id="liveDossierTableBody"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
-    <div id="facultyListContainer">
-      <p style="color:#94a3b8; text-align:center; padding:30px 0;">No pending faculty enquiries.</p>
+  </div>
+
+  <!-- SECTION 3: HISTORICAL ARCHIVE ANALYZER FOR STAFF -->
+  <div id="staffArchiveSection" style="display:none;">
+    <div class="neu-card">
+      <h3 style="color:var(--primary); margin-top:0;">Historical 4-Month Archive Performance Analyzer</h3>
+      <p style="font-size:13px; color:var(--subtext); margin-bottom:16px;">
+        Upload your downloaded personal CSV archive (or the master college CSV archive) to reconstruct full charts, text analytics, and appraisal metrics offline.
+      </p>
+
+      <div style="background:#f8fafc; border:1px dashed #cbd5e1; padding:22px; border-radius:14px; text-align:center;">
+        <input type="file" id="staffArchiveFileInput" accept=".csv" class="neu-inset" style="max-width:400px; margin:auto;">
+        <button class="neu-btn" style="margin-top:12px; color:var(--accent);" onclick="processStaffHistoricalArchive()">Analyze Uploaded Archive</button>
+      </div>
+
+      <div id="staffArchiveAnalyticsView" style="display:none; margin-top:25px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #cbd5e1; padding-bottom:8px;">
+          <h4 id="staffArchiveReportTitle" style="color:var(--primary); margin:0;">Historical Analysis Overview</h4>
+          <button class="neu-btn" style="color:var(--green); font-size:12px; padding:6px 14px;" onclick="printStaffArchiveDossierPDF()">Download Archive Appraisal PDF</button>
+        </div>
+
+        <div class="kpi-row" id="staffArchiveKpis"></div>
+
+        <div class="grid-2" style="margin-top:15px;">
+          <div class="neu-card" style="margin-bottom:0;">
+            <h4 style="color:var(--primary); margin:0 0 8px 0; font-size:14px;">Inquiry Timeline by Date</h4>
+            <div class="chart-box"><canvas id="staffArchiveTimelineChart"></canvas></div>
+          </div>
+          <div class="neu-card" style="margin-bottom:0;">
+            <h4 style="color:var(--accent); margin:0 0 8px 0; font-size:14px;">Program / Demographics Distribution</h4>
+            <div class="chart-box"><canvas id="staffArchiveCourseChart"></canvas></div>
+          </div>
+        </div>
+
+        <div class="neu-card" style="margin-top:20px;">
+          <h4 style="color:var(--primary); margin:0 0 8px 0; font-size:14px;">Top Recurring Concern Keywords</h4>
+          <div id="staffArchiveKeywords" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+        </div>
+
+        <div class="neu-card" style="margin-top:20px;">
+          <h4 style="color:var(--primary); margin:0 0 10px 0; font-size:14px;">Detailed Historical Records Log</h4>
+          <div style="overflow-x:auto; max-height:260px;">
+            <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left;">
+              <thead style="background:#f1f5f9; position:sticky; top:0;">
+                <tr style="color:#475569;">
+                  <th style="padding:8px;">Visitor</th>
+                  <th style="padding:8px;">Program</th>
+                  <th style="padding:8px;">Query</th>
+                  <th style="padding:8px;">Status</th>
+                  <th style="padding:8px;">Resolution Remarks</th>
+                  <th style="padding:8px;">Duration</th>
+                </tr>
+              </thead>
+              <tbody id="staffArchiveTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
+<!-- Availability Modal -->
 <div id="statusModal" class="modal-overlay">
   <div class="neu-card" style="max-width: 440px; width: 100%;">
     <h3 style="color:var(--primary); margin-top:0;">Desk Availability Settings</h3>
@@ -440,6 +602,7 @@
   </div>
 </div>
 
+<!-- Desk Announcement Modal -->
 <div id="staffNoticeModal" class="modal-overlay">
   <div class="neu-card" style="max-width: 500px; width: 100%;">
     <h3 style="color:var(--teal); margin-top:0;">My Desk Announcement</h3>
@@ -479,67 +642,7 @@
   </div>
 </div>
 
-<!-- Personal Appraisal Performance Dossier Modal (Printable to PDF) -->
-<div id="appraisalModal" class="modal-overlay">
-  <div class="neu-card" style="max-width: 840px; width: 100%; max-height: 85vh; display: flex; flex-direction: column;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #cbd5e1; padding-bottom:8px;">
-      <h3 style="color:var(--primary); margin:0;">Staff Appraisal & Performance Dossier</h3>
-      <div style="display:flex; gap:8px;">
-        <button class="neu-btn" style="color:var(--green); font-size:12px; padding:6px 12px;" onclick="printStaffAppraisalPDF()">Export Dossier (PDF)</button>
-        <button class="neu-btn" style="font-size:12px; padding:6px 12px;" onclick="closeAppraisalModal()">Close</button>
-      </div>
-    </div>
-
-    <!-- Printable Dossier Canvas -->
-    <div id="printableAppraisalContent" style="flex:1; overflow-y:auto; padding:12px; background:#ffffff; border-radius:12px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #1e3a8a; padding-bottom:10px; margin-bottom:15px;">
-        <div>
-          <h2 style="color:#1e3a8a; margin:0;">Staff Performance Evaluation Report</h2>
-          <div style="font-size:13px; color:#475569;">Student Service Department (SSD) • University Official Audit</div>
-        </div>
-        <div style="text-align:right;">
-          <div id="appraisalStaffName" style="font-size:16px; font-weight:800; color:#1e3a8a;">Officer Profile</div>
-          <div id="appraisalGeneratedDate" style="font-size:12px; color:#64748b;">Date: 2026</div>
-        </div>
-      </div>
-
-      <!-- KPI Snapshot -->
-      <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:20px;">
-        <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px; border-radius:10px; text-align:center;">
-          <div style="font-size:11px; font-weight:700; color:#64748b;">TOTAL ASSIGNED</div>
-          <div id="appraisalTotal" style="font-size:22px; font-weight:800; color:#1e3a8a; margin-top:4px;">0</div>
-        </div>
-        <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:12px; border-radius:10px; text-align:center;">
-          <div style="font-size:11px; font-weight:700; color:#166534;">RESOLVED QUERIES</div>
-          <div id="appraisalResolved" style="font-size:22px; font-weight:800; color:#16a34a; margin-top:4px;">0</div>
-        </div>
-        <div style="background:#fef2f2; border:1px solid #fecaca; padding:12px; border-radius:10px; text-align:center;">
-          <div style="font-size:11px; font-weight:700; color:#991b1b;">RESOLUTION RATE</div>
-          <div id="appraisalRate" style="font-size:22px; font-weight:800; color:#dc2626; margin-top:4px;">0%</div>
-        </div>
-        <div style="background:#eff6ff; border:1px solid #bfdbfe; padding:12px; border-radius:10px; text-align:center;">
-          <div style="font-size:11px; font-weight:700; color:#1e40af;">AVG SPEED (TAT)</div>
-          <div id="appraisalTAT" style="font-size:22px; font-weight:800; color:#2563eb; margin-top:4px;">0m</div>
-        </div>
-      </div>
-
-      <h4 style="color:#1e3a8a; margin:0 0 8px 0; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">Resolved Student & Faculty Interactions</h4>
-      <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left;">
-        <thead>
-          <tr style="background:#f1f5f9; color:#475569;">
-            <th style="padding:8px;">Visitor Name</th>
-            <th style="padding:8px;">Enroll / Details</th>
-            <th style="padding:8px;">Query Summary</th>
-            <th style="padding:8px;">Resolution Remarks</th>
-            <th style="padding:8px;">TAT</th>
-          </tr>
-        </thead>
-        <tbody id="appraisalTableBody"></tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
+<!-- Transfer Modal -->
 <div id="transferModal" class="modal-overlay">
   <div class="neu-card" style="max-width: 440px; width: 100%;">
     <h3 style="color:var(--primary); margin-top:0;">Reassign / Transfer Ticket</h3>
@@ -559,6 +662,7 @@
   </div>
 </div>
 
+<!-- Staff Drill-Down Modal -->
 <div id="staffDrilldownModal" class="modal-overlay">
   <div class="neu-card" style="max-width: 900px; width: 100%; max-height: 85vh; display: flex; flex-direction: column;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px; border-bottom: 1px solid #cbd5e1; padding-bottom: 10px; flex-wrap:wrap; gap:10px;">
@@ -614,8 +718,12 @@
   let currentStaffTickets = [];
   let allMasterTickets = [];
   let currentDrilldownCategory = 'ALL';
+  let staffArchivedRecords = [];
 
-  // Dynamic Logo Syncer
+  let staffArchiveTimelineChartInstance = null;
+  let staffArchiveCourseChartInstance = null;
+
+  // Real-time Dynamic Logo Syncer
   db.collection('settings').doc('branding').onSnapshot(doc => {
     if (doc.exists && doc.data().logoDataUrl) {
       const url = doc.data().logoDataUrl;
@@ -667,8 +775,7 @@
     sel.innerHTML = '<option value="">-- Choose Profile --</option>';
     profiles.forEach(p => {
       const opt = document.createElement('option');
-      opt.value = p;
-      opt.innerText = p;
+      opt.value = p; opt.innerText = p;
       sel.appendChild(opt);
     });
     if (currentVal && profiles.includes(currentVal)) {
@@ -954,11 +1061,21 @@
     }).catch(err => alert("Transfer failed: " + err.message));
   }
 
-  function switchDeskTab(tab) {
-    document.getElementById('studentSection').style.display = tab === 'student' ? 'block' : 'none';
-    document.getElementById('facultySection').style.display = tab === 'faculty' ? 'block' : 'none';
-    document.getElementById('btnStudentTab').classList.toggle('active', tab === 'student');
-    document.getElementById('btnFacultyTab').classList.toggle('active', tab === 'faculty');
+  function switchMainStaffTab(tab) {
+    document.getElementById('staffQueueSection').style.display = tab === 'queue' ? 'block' : 'none';
+    document.getElementById('staffAnalyticsSection').style.display = tab === 'analytics' ? 'block' : 'none';
+    document.getElementById('staffArchiveSection').style.display = tab === 'archive' ? 'block' : 'none';
+
+    document.getElementById('btnTabLiveQueue').classList.toggle('active', tab === 'queue');
+    document.getElementById('btnTabMyAnalytics').classList.toggle('active', tab === 'analytics');
+    document.getElementById('btnTabStaffArchive').classList.toggle('active', tab === 'archive');
+
+    if (tab === 'analytics') renderLiveStaffAnalytics();
+  }
+
+  function switchSubQueue(sub) {
+    document.getElementById('studentContainerBox').style.display = sub === 'student' ? 'block' : 'none';
+    document.getElementById('facultyContainerBox').style.display = sub === 'faculty' ? 'block' : 'none';
   }
 
   function listenToQueue() {
@@ -1003,13 +1120,10 @@
       document.getElementById('badgeStudent').innerText = stuCount;
       document.getElementById('badgeFaculty').innerText = facCount;
 
-      const facTabBtn = document.getElementById('btnFacultyTab');
       const facKpiCard = document.getElementById('facKpiCard');
       if (facCount > 0) {
-        facTabBtn.classList.add('glow-alert');
         facKpiCard.classList.add('glow-alert');
       } else {
-        facTabBtn.classList.remove('glow-alert');
         facKpiCard.classList.remove('glow-alert');
       }
 
@@ -1164,8 +1278,8 @@
     document.getElementById('staffDrilldownModal').style.display = 'none';
   }
 
-  // Personal Staff Appraisal Dossier
-  function openAppraisalModal() {
+  // Live Performance Audit Dossier
+  function renderLiveStaffAnalytics() {
     const myTickets = allMasterTickets.filter(r => r.assignedStaff === activeStaff || r.resolvedBy === activeStaff);
     const resolvedTickets = myTickets.filter(r => r.status === 'Resolved');
     
@@ -1181,46 +1295,178 @@
     const avgTAT = tatCount > 0 ? (totalTAT / tatCount).toFixed(1) + 'm' : 'N/A';
     const rate = myTickets.length ? Math.round((resolvedTickets.length / myTickets.length) * 100) + '%' : '100%';
 
-    document.getElementById('appraisalStaffName').innerText = activeStaff;
-    document.getElementById('appraisalGeneratedDate').innerText = "Generated: " + new Date().toLocaleDateString([], {month:'short', day:'numeric', year:'numeric'});
-    document.getElementById('appraisalTotal').innerText = myTickets.length;
-    document.getElementById('appraisalResolved').innerText = resolvedTickets.length;
-    document.getElementById('appraisalRate').innerText = rate;
-    document.getElementById('appraisalTAT').innerText = avgTAT;
+    document.getElementById('liveDossierStaffName').innerText = activeStaff;
+    document.getElementById('liveDossierDate').innerText = "Generated: " + new Date().toLocaleDateString([], {month:'short', day:'numeric', year:'numeric'});
+    document.getElementById('liveDossierTotal').innerText = myTickets.length;
+    document.getElementById('liveDossierResolved').innerText = resolvedTickets.length;
+    document.getElementById('liveDossierRate').innerText = rate;
+    document.getElementById('liveDossierTAT').innerText = avgTAT;
 
-    const tbody = document.getElementById('appraisalTableBody');
+    const tbody = document.getElementById('liveDossierTableBody');
     tbody.innerHTML = '';
     if (!resolvedTickets.length) {
       tbody.innerHTML = '<tr><td colspan="5" style="padding:15px; text-align:center; color:#94a3b8;">No resolved tickets logged under this profile yet.</td></tr>';
     } else {
-      resolvedTickets.slice(0, 60).forEach(r => {
+      resolvedTickets.slice(0, 80).forEach(r => {
         tbody.innerHTML += `
           <tr style="border-bottom:1px solid #e2e8f0;">
-            <td style="padding:8px;"><b>${r.name || 'N/A'}</b></td>
-            <td style="padding:8px;">${r.enrollment || 'FACULTY'} (${r.course || 'MBA'})</td>
-            <td style="padding:8px; font-size:11px;">${r.query || ''}</td>
-            <td style="padding:8px; font-size:11px; color:#16a34a;">${r.solution || 'Resolved'}</td>
-            <td style="padding:8px; font-weight:700;">${r.handlingDurationMinutes || 1}m</td>
+            <td style="padding:7px;"><b>${r.name || 'N/A'}</b></td>
+            <td style="padding:7px;">${r.enrollment || 'FACULTY'} (${r.course || 'MBA'})</td>
+            <td style="padding:7px; font-size:11px;">${r.query || ''}</td>
+            <td style="padding:7px; font-size:11px; color:#16a34a;">${r.solution || 'Resolved'}</td>
+            <td style="padding:7px; font-weight:700;">${r.handlingDurationMinutes || 1}m</td>
           </tr>
         `;
       });
     }
-
-    document.getElementById('appraisalModal').style.display = 'flex';
   }
 
-  function closeAppraisalModal() {
-    document.getElementById('appraisalModal').style.display = 'none';
-  }
-
-  function printStaffAppraisalPDF() {
-    const el = document.getElementById('printableAppraisalContent');
+  function printLiveStaffDossierPDF() {
+    const el = document.getElementById('printDossierCanvas');
     const opt = {
-      margin: 10,
+      margin: [10, 10, 10, 10],
       filename: `SSD_Staff_Appraisal_${activeStaff.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().substring(0, 10)}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
+      html2canvas: { scale: 2, useCORS: true, width: 800 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(el).save();
+  }
+
+  // Historical CSV Archive Analyzer for Staff
+  function processStaffHistoricalArchive() {
+    const file = document.getElementById('staffArchiveFileInput').files[0];
+    if (!file) return alert("Select a previously downloaded CSV archive file.");
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        const raw = results.data;
+        // Filter to inquiries handled by this staff or show all if it was their personal export
+        staffArchivedRecords = raw.filter(r => {
+          const staffVal = r["Assigned Staff"] || r["assignedStaff"] || r["Staff Member"] || '';
+          return !staffVal || staffVal === activeStaff || staffVal.includes(activeStaff) || raw.length < 500;
+        });
+
+        if (!staffArchivedRecords.length) {
+          staffArchivedRecords = raw; // Use entire dataset if personal filter yields empty
+        }
+
+        renderStaffArchiveDashboard(file.name);
+      }
+    });
+  }
+
+  function renderStaffArchiveDashboard(fileName) {
+    document.getElementById('staffArchiveAnalyticsView').style.display = 'block';
+    document.getElementById('staffArchiveReportTitle').innerText = "Historical Appraisal Audit: " + fileName;
+
+    let res = 0, stu = 0, fac = 0, totalTAT = 0, tatCount = 0;
+    let timeline = {};
+    let courseCounts = { "MBA": 0, "BCA": 0, "BBA LLB": 0, "Other": 0 };
+    let keywords = {};
+    const stopWords = ["this", "that", "have", "from", "with", "what", "some", "please", "regarding", "about", "want", "need", "issue", "help", "detail", "details", "there", "query", "queries"];
+
+    staffArchivedRecords.forEach(r => {
+      const status = (r.Status || r.status || '').toLowerCase();
+      if (status.includes('resolved')) res++;
+
+      const type = (r.Type || r.type || '').toLowerCase();
+      if (type.includes('faculty')) fac++;
+      else stu++;
+
+      const dur = parseFloat(r["Handling Duration (Mins)"] || r.handlingDurationMinutes || 0);
+      if (dur > 0 && dur <= 180) {
+        totalTAT += dur;
+        tatCount++;
+      }
+
+      const dateStr = r["Created Date"] || r.createdDate || r["Logged Time"] || '';
+      if (dateStr) {
+        const dKey = dateStr.substring(0, 10);
+        timeline[dKey] = (timeline[dKey] || 0) + 1;
+      }
+
+      const c = (r.Course || r.course || '').toUpperCase();
+      if (c.includes('MBA')) courseCounts["MBA"]++;
+      else if (c.includes('BCA')) courseCounts["BCA"]++;
+      else if (c.includes('BBA') || c.includes('LLB')) courseCounts["BBA LLB"]++;
+      else courseCounts["Other"]++;
+
+      const q = (r.Query || r.query || '').toLowerCase().replace(/[^a-zA-Z ]/g, " ").split(/\s+/);
+      q.forEach(w => {
+        if (w.length > 3 && !stopWords.includes(w)) keywords[w] = (keywords[w] || 0) + 1;
+      });
+    });
+
+    const avgTAT = tatCount > 0 ? (totalTAT / tatCount).toFixed(1) + 'm' : 'N/A';
+    const rate = staffArchivedRecords.length ? Math.round((res / staffArchivedRecords.length) * 100) + '%' : '100%';
+
+    const kpiEl = document.getElementById('staffArchiveKpis');
+    kpiEl.innerHTML = `
+      <div class="neu-card" style="margin:0;"><span style="font-size:11px; font-weight:700; color:var(--subtext);">TOTAL INQUIRIES</span><div class="stat-val" style="color:var(--primary);">${staffArchivedRecords.length}</div></div>
+      <div class="neu-card" style="margin:0;"><span style="font-size:11px; font-weight:700; color:var(--green);">RESOLVED</span><div class="stat-val" style="color:var(--green);">${res}</div></div>
+      <div class="neu-card" style="margin:0;"><span style="font-size:11px; font-weight:700; color:var(--accent);">RESOLUTION RATE</span><div class="stat-val" style="color:var(--accent);">${rate}</div></div>
+      <div class="neu-card" style="margin:0;"><span style="font-size:11px; font-weight:700; color:var(--amber);">AVG TAT SPEED</span><div class="stat-val" style="color:var(--amber);">${avgTAT}</div></div>
+    `;
+
+    // Timeline Chart
+    const dates = Object.keys(timeline).sort();
+    if (staffArchiveTimelineChartInstance) staffArchiveTimelineChartInstance.destroy();
+    staffArchiveTimelineChartInstance = new Chart(document.getElementById('staffArchiveTimelineChart'), {
+      type: 'line',
+      data: {
+        labels: dates.length ? dates : ['No Date'],
+        datasets: [{ label: 'Queries Handled', data: dates.map(d => timeline[d]), borderColor: '#2563eb', fill: true, backgroundColor: 'rgba(37,99,235,0.08)' }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+
+    // Course Chart
+    if (staffArchiveCourseChartInstance) staffArchiveCourseChartInstance.destroy();
+    staffArchiveCourseChartInstance = new Chart(document.getElementById('staffArchiveCourseChart'), {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(courseCounts),
+        datasets: [{ data: Object.values(courseCounts), backgroundColor: ['#2563eb', '#7c3aed', '#16a34a', '#64748b'] }]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    // Render Keywords
+    const kwEl = document.getElementById('staffArchiveKeywords');
+    kwEl.innerHTML = '';
+    const topKeywords = Object.entries(keywords).sort((a,b) => b[1] - a[1]).slice(0, 15);
+    topKeywords.forEach(([w, count]) => {
+      kwEl.innerHTML += `<span class="tag"><b>${w}</b> <span style="color:var(--accent);">${count}</span></span>`;
+    });
+
+    // Render Table
+    const tbody = document.getElementById('staffArchiveTableBody');
+    tbody.innerHTML = '';
+    staffArchivedRecords.slice(0, 75).forEach(r => {
+      tbody.innerHTML += `
+        <tr style="border-bottom:1px solid #e2e8f0;">
+          <td style="padding:7px;"><b>${r["Visitor Name"] || r.Name || r.name || 'N/A'}</b></td>
+          <td style="padding:7px;">${r.Course || r.course || 'MBA'}</td>
+          <td style="padding:7px; font-size:11px; max-width:240px;">${r.Query || r.query || ''}</td>
+          <td style="padding:7px; font-weight:700; color:green;">${r.Status || r.status || 'Resolved'}</td>
+          <td style="padding:7px; font-size:11px; color:#166534;">${r["Solution Remarks"] || r.Remarks || r.solution || 'Resolved'}</td>
+          <td style="padding:7px; font-weight:700;">${r["Handling Duration (Mins)"] || r.handlingDurationMinutes || 1}m</td>
+        </tr>
+      `;
+    });
+  }
+
+  function printStaffArchiveDossierPDF() {
+    const el = document.getElementById('staffArchiveAnalyticsView');
+    const opt = {
+      margin: [10, 10, 10, 10],
+      filename: `SSD_Historical_Appraisal_${activeStaff.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().substring(0, 10)}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, width: 800 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
     };
     html2pdf().set(opt).from(el).save();
   }
