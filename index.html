@@ -97,7 +97,6 @@
       height: fit-content;
     }
     
-    /* New Wide Official Logo Calibration */
     .header { text-align: center; margin-bottom: 12px; }
     .header img {
       max-height: 56px;
@@ -339,7 +338,7 @@
 
 <div id="kioskGateOverlay" style="display:none;">
   <div class="gate-box">
-    <img src="logo.png" alt="Logo" style="max-height:54px; max-width:280px; object-fit:contain; margin-bottom:12px;" onerror="this.style.display='none'">
+    <img id="kioskGateLogo" src="logo.png" alt="Logo" style="max-height:54px; max-width:280px; object-fit:contain; margin-bottom:12px;" onerror="this.src='logo.png'">
     <h3 style="color:var(--primary); margin:0 0 6px 0;">Front Desk Terminal</h3>
     <p style="font-size:13px; color:#64748b; margin-top:0;">Daily authentication required for this device.</p>
     
@@ -351,7 +350,7 @@
 
 <div class="layout-wrapper" id="mainDeskContent" style="display:none;">
   
-  <!-- LEFT COLUMN: Availability Status Roster -->
+  <!-- LEFT COLUMN: Availability Status Roster + Left Priority Announcements -->
   <div class="side-column-left">
     <div class="neu-widget" style="border-left: 5px solid var(--accent);">
       <h4 style="margin:0 0 4px 0; color:var(--primary); font-size:15px;">Availability Status</h4>
@@ -366,7 +365,7 @@
   <div class="center-column">
     <div class="neu-card">
       <div class="header">
-        <img src="logo.png" alt="ICFAI Foundation for Higher Education, Bangalore" onerror="this.style.display='none'">
+        <img id="frontDeskMainLogo" src="logo.png" alt="ICFAI Foundation for Higher Education, Bangalore" onerror="this.src='logo.png'">
         <h3 style="color:var(--primary); margin: 4px 0 2px 0; font-size:18.5px;">Student Service Department (SSD)</h3>
         <p style="color:#64748b; font-size: 13px; margin:0;">Visitor Enquiry & Check-in Desk</p>
       </div>
@@ -377,7 +376,7 @@
         <button class="tab-btn" id="tabGeneral" type="button" onclick="switchTab('general')">General Enquiry</button>
       </div>
 
-      <!-- 1. Student Form (Auto-clears completely on backspace) -->
+      <!-- 1. Student Form -->
       <form id="studentForm">
         <label style="font-size:12.5px; font-weight:600;">Enrollment Number</label>
         <input type="text" id="stuEnroll" class="neu-input" placeholder="e.g. 26BSOCBL0001" oninput="handleStudentEnrollInput()" required>
@@ -469,9 +468,10 @@
     </div>
   </div>
 
-  <!-- RIGHT COLUMN: Centered-Badge Announcements -->
+  <!-- RIGHT COLUMN: Centered-Badge Multi-Stream Announcements -->
   <div class="side-column-right" id="announcementsColumn">
     
+    <!-- 1. Common Announcement Card -->
     <div id="cardAnnCommon" class="announcement-card ann-common" style="display:none;">
       <div class="ann-badge badge-common">General Announcement</div>
       <div class="ann-title" id="annTitleCommon">Announcement</div>
@@ -480,6 +480,7 @@
       </div>
     </div>
 
+    <!-- 2. UG Announcement Card -->
     <div id="cardAnnUG" class="announcement-card ann-ug" style="display:none;">
       <div class="ann-badge badge-ug">UG Announcement (BCA / BBA LLB)</div>
       <div class="ann-title" id="annTitleUG">UG Notice</div>
@@ -488,6 +489,7 @@
       </div>
     </div>
 
+    <!-- 3. MBA Announcement Card -->
     <div id="cardAnnMBA" class="announcement-card ann-mba" style="display:none;">
       <div class="ann-badge badge-mba">MBA Announcement</div>
       <div class="ann-title" id="annTitleMBA">MBA Notice</div>
@@ -496,6 +498,7 @@
       </div>
     </div>
 
+    <!-- Right Side Spillover for Staff Announcements -->
     <div id="rightStaffAnnouncements" style="display:flex; flex-direction:column; gap:14px;"></div>
 
   </div>
@@ -525,6 +528,17 @@
   let staffStatusMap = {};
   let currentActiveTab = 'student';
   let broadcastState = {};
+
+  // Real-time Dynamic Logo Syncer
+  db.collection('settings').doc('branding').onSnapshot(doc => {
+    if (doc.exists && doc.data().logoDataUrl) {
+      const url = doc.data().logoDataUrl;
+      const fLogo = document.getElementById('frontDeskMainLogo');
+      const gLogo = document.getElementById('kioskGateLogo');
+      if (fLogo) fLogo.src = url;
+      if (gLogo) gLogo.src = url;
+    }
+  });
 
   function verifyKioskGate() {
     const todayStr = new Date().toISOString().substring(0, 10);
@@ -792,7 +806,6 @@
     }
   }
 
-  // Clear all auto-populated fields if enrollment input is backspaced / emptied
   function handleStudentEnrollInput() {
     const v = document.getElementById('stuEnroll').value.trim().toUpperCase();
     if (!v) {
