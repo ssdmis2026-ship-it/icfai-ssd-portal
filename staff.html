@@ -92,7 +92,6 @@
       transition: transform 0.15s ease;
     }
     .kpi-card:hover { transform: translateY(-2px); }
-    .kpi-card:active { transform: translateY(0); }
     .kpi-card .label { font-size: 12px; font-weight: 700; color: var(--subtext); }
     .kpi-card .val { font-size: 28px; font-weight: 800; margin-top: 6px; color: var(--primary); }
     .kpi-card .kpi-hint {
@@ -157,6 +156,44 @@
       align-items: center;
       gap: 6px;
       border: 1px solid #cbd5e1;
+    }
+
+    /* Staff 360 Timeline Styles */
+    .timeline-container {
+      position: relative;
+      padding-left: 28px;
+      margin-top: 18px;
+    }
+    .timeline-container::before {
+      content: '';
+      position: absolute;
+      left: 10px;
+      top: 8px;
+      bottom: 8px;
+      width: 3px;
+      background: #cbd5e1;
+      border-radius: 2px;
+    }
+    .timeline-card {
+      position: relative;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.03);
+    }
+    .timeline-card::before {
+      content: '';
+      position: absolute;
+      left: -23px;
+      top: 16px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 0 2px var(--accent);
     }
     
     @keyframes steadyGlowPulse {
@@ -274,7 +311,6 @@
       100% { opacity: 0; transform: scale(0.85) translateY(-15px); }
     }
 
-    /* Print Document Styling */
     .print-document-canvas {
       width: 760px;
       background: #ffffff;
@@ -304,7 +340,6 @@
 </head>
 <body>
 
-<!-- Motion Welcome Greeting Toast -->
 <div id="welcomeToastOverlay">
   <div class="welcome-card" id="welcomeToastBox">
     <div style="width:64px; height:64px; border-radius:50%; background:#dbeafe; display:flex; align-items:center; justify-content:center; margin: 0 auto 16px auto; box-shadow: inset 3px 3px 6px var(--dark-shadow), inset -3px -3px 6px var(--light-shadow);">
@@ -410,6 +445,9 @@
     </button>
     <button class="tab-item" id="btnTabMyAnalytics" type="button" onclick="switchMainStaffTab('analytics')">
       <span>My Performance Dossier</span>
+    </button>
+    <button class="tab-item" id="btnTabStaff360" type="button" onclick="switchMainStaffTab('student360')">
+      <span>Student 360° History</span>
     </button>
     <button class="tab-item" id="btnTabStaffArchive" type="button" onclick="switchMainStaffTab('archive')">
       <span>Historical Archive Analyzer</span>
@@ -520,7 +558,44 @@
     </div>
   </div>
 
-  <!-- SECTION 3: HISTORICAL ARCHIVE ANALYZER FOR STAFF (WITH HIGH-DPI CHARTS) -->
+  <!-- SECTION 3: STUDENT 360° FOR STAFF WORKSTATION -->
+  <div id="staff360Section" style="display:none;">
+    <div class="neu-card">
+      <h3 style="color:var(--primary); margin-top:0;">Student 360° Interaction History (My Desk)</h3>
+      <p style="font-size:13px; color:var(--subtext);">Inspect past queries submitted specifically to your desk by any student enrollment number.</p>
+
+      <div style="display:flex; gap:12px; margin:16px 0; max-width:650px;">
+        <input type="text" id="staffSearch360Enroll" class="neu-inset" placeholder="Type enrollment number (e.g. 26BSOCBL0001)...">
+        <button class="neu-btn" style="white-space:nowrap; color:var(--accent);" onclick="performStaff360Search()">Inspect History</button>
+      </div>
+
+      <div id="staffSummary360Container" style="display:none; background:#f8fafc; border:1px solid #cbd5e1; border-radius:16px; padding:20px; margin-bottom:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+          <div>
+            <h2 id="staffName360" style="margin:0; color:var(--primary);">Student Name</h2>
+            <div style="font-size:14px; color:var(--subtext); margin-top:4px;">
+              Enrollment: <b id="staffEnroll360" style="color:var(--accent);"></b> • Program: <b id="staffCourse360"></b> • Section: <b id="staffSec360"></b> • Semester: <b id="staffSem360"></b>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div id="staffTotalVisitsBadge" style="background:#dbeafe; color:var(--accent); font-size:16px; font-weight:800; padding:6px 14px; border-radius:12px; display:inline-block;">0 Visits Logged</div>
+            <div id="staffRepeatStatus360" style="font-size:12px; font-weight:700; color:var(--crimson); margin-top:4px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="staffTimeline360Container" style="display:none;">
+        <h4 style="color:var(--primary); margin:0;">Interaction Audit Timeline (Handled at Your Desk)</h4>
+        <div class="timeline-container" id="staffTimelineList"></div>
+      </div>
+
+      <div id="staffEmpty360State" style="text-align:center; padding:40px 0; color:#94a3b8;">
+        Type an enrollment number above to view their audit history at your desk.
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 4: HISTORICAL ARCHIVE ANALYZER FOR STAFF (WITH HIGH-DPI CHARTS) -->
   <div id="staffArchiveSection" style="display:none;">
     <div class="neu-card">
       <h3 style="color:var(--primary); margin-top:0;">Historical 4-Month Archive Deep-Dive Analyzer</h3>
@@ -753,13 +828,15 @@
     }
   });
 
-  // 4-Month Cycle Checker
+  // 4-Month Cycle Checker (Initialized properly)
   db.collection('settings').doc('systemArchive').onSnapshot(doc => {
     if (doc.exists && doc.data().lastArchivedTimestamp) {
       const last = doc.data().lastArchivedTimestamp;
       const days = (Date.now() - last) / (1000 * 60 * 60 * 24);
       if (days >= 120 && activeStaff) {
         document.getElementById('staffCycleNoticeModal').style.display = 'flex';
+      } else {
+        document.getElementById('staffCycleNoticeModal').style.display = 'none';
       }
     }
   });
@@ -1083,10 +1160,12 @@
   function switchMainStaffTab(tab) {
     document.getElementById('staffQueueSection').style.display = tab === 'queue' ? 'block' : 'none';
     document.getElementById('staffAnalyticsSection').style.display = tab === 'analytics' ? 'block' : 'none';
+    document.getElementById('staff360Section').style.display = tab === 'student360' ? 'block' : 'none';
     document.getElementById('staffArchiveSection').style.display = tab === 'archive' ? 'block' : 'none';
 
     document.getElementById('btnTabLiveQueue').classList.toggle('active', tab === 'queue');
     document.getElementById('btnTabMyAnalytics').classList.toggle('active', tab === 'analytics');
+    document.getElementById('btnTabStaff360').classList.toggle('active', tab === 'student360');
     document.getElementById('btnTabStaffArchive').classList.toggle('active', tab === 'archive');
 
     if (tab === 'analytics') renderLiveStaffAnalytics();
@@ -1297,6 +1376,76 @@
     document.getElementById('staffDrilldownModal').style.display = 'none';
   }
 
+  // Student 360° History for Staff Workstation
+  function performStaff360Search() {
+    const searchVal = document.getElementById('staffSearch360Enroll').value.trim().toUpperCase();
+    if (!searchVal) return alert("Please enter an enrollment number.");
+
+    // Filter enquiries specifically handled by this staff
+    const myDeskVisits = allMasterTickets.filter(r => 
+      (r.enrollment || '').toUpperCase() === searchVal && 
+      (r.assignedStaff === activeStaff || r.resolvedBy === activeStaff)
+    );
+
+    const studentInfo = myDeskVisits[0] || { name: 'Enrolled Student', course: 'N/A', sec: 'N/A', sem: 'N/A' };
+
+    document.getElementById('staffName360').innerText = studentInfo.name || searchVal;
+    document.getElementById('staffEnroll360').innerText = searchVal;
+    document.getElementById('staffCourse360').innerText = studentInfo.course || 'MBA';
+    document.getElementById('staffSec360').innerText = studentInfo.sec || 'N/A';
+    document.getElementById('staffSem360').innerText = studentInfo.sem || 'N/A';
+
+    document.getElementById('staffTotalVisitsBadge').innerText = `${myDeskVisits.length} Visits at Your Desk`;
+    if (myDeskVisits.length > 1) {
+      document.getElementById('staffRepeatStatus360').innerText = `⚠ Repeat Visitor at Your Desk (${myDeskVisits.length - 1} repeat visits)`;
+    } else {
+      document.getElementById('staffRepeatStatus360').innerText = `Standard / Single Visit at Your Desk`;
+    }
+
+    const timelineContainer = document.getElementById('staffTimelineList');
+    timelineContainer.innerHTML = '';
+
+    if (!myDeskVisits.length) {
+      timelineContainer.innerHTML = `<p style="color:#94a3b8; font-size:13px;">No past inquiries logged at your desk for enrollment number: ${searchVal}.</p>`;
+    } else {
+      myDeskVisits.forEach((v, idx) => {
+        const dateObj = v.createdDate ? new Date(v.createdDate) : new Date();
+        const dateStr = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+        const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const isResolved = v.status === 'Resolved';
+
+        timelineContainer.innerHTML += `
+          <div class="timeline-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+              <div>
+                <span style="font-size:12px; font-weight:800; color:var(--primary); background:#e2e8f0; padding:2px 8px; border-radius:6px;">Visit #${myDeskVisits.length - idx}</span>
+                <span style="font-size:13px; font-weight:700; margin-left:6px;">Handled by: <b>${v.assignedStaff || activeStaff}</b></span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:12px; font-weight:700; color:${isResolved ? 'var(--green)' : 'var(--crimson)'};">${v.status}</span>
+                <span style="font-size:12px; color:var(--subtext);">${dateStr} at ${timeStr}</span>
+              </div>
+            </div>
+
+            <div style="background:#ffffff; border:1px solid #e2e8f0; padding:12px; border-radius:10px; margin:10px 0; font-size:13px; color:#334155;">
+              <b>Query:</b> ${v.query}
+            </div>
+
+            ${v.solution ? `
+              <div style="font-size:12.5px; color:#1e293b; background:#f0fdf4; border:1px solid #bbf7d0; padding:8px 12px; border-radius:8px;">
+                <b>Your Resolution Remarks:</b> ${v.solution} (TAT:${v.handlingDurationMinutes || 1}m)
+              </div>
+            ` : '<div style="font-size:12px; color:var(--crimson);"><b>Status Note:</b> Query currently awaiting desk resolution.</div>'}
+          </div>
+        `;
+      });
+    }
+
+    document.getElementById('staffSummary360Container').style.display = 'block';
+    document.getElementById('staffTimeline360Container').style.display = 'block';
+    document.getElementById('staffEmpty360State').style.display = 'none';
+  }
+
   // Live Performance Dossier
   function renderLiveStaffAnalytics() {
     const myTickets = allMasterTickets.filter(r => r.assignedStaff === activeStaff || r.resolvedBy === activeStaff);
@@ -1352,7 +1501,7 @@
     html2pdf().set(opt).from(el).save();
   }
 
-  // Historical CSV Archive Analyzer for Staff (Converts Canvases to Img before PDF to prevent vanishing graphs)
+  // Historical CSV Archive Analyzer for Staff
   function processStaffHistoricalArchive() {
     const file = document.getElementById('staffArchiveFileInput').files[0];
     if (!file) return alert("Select a previously downloaded CSV archive file.");
@@ -1444,11 +1593,10 @@
       </div>
     `;
 
-    // Ensure pristine canvas elements inside containers
     document.getElementById('boxTimelineChart').innerHTML = '<canvas id="staffArchiveTimelineChart"></canvas>';
     document.getElementById('boxCourseChart').innerHTML = '<canvas id="staffArchiveCourseChart"></canvas>';
 
-    // Render Timeline Chart (Animation turned OFF for instant raster readiness)
+    // Render Timeline Chart (Instant Raster Mode)
     const dates = Object.keys(timeline).sort();
     staffArchiveTimelineChartInstance = new Chart(document.getElementById('staffArchiveTimelineChart'), {
       type: 'line',
@@ -1459,7 +1607,7 @@
       options: { animation: false, responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
 
-    // Render Doughnut Chart (Animation turned OFF)
+    // Render Doughnut Chart (Instant Raster Mode)
     staffArchiveCourseChartInstance = new Chart(document.getElementById('staffArchiveCourseChart'), {
       type: 'doughnut',
       data: {
@@ -1494,16 +1642,14 @@
     });
   }
 
-  // Print Staff Archive Dossier: Converts canvases to static high-res images to guarantee the doughnut chart never drops out
+  // Converts canvases to raster image snapshots so charts do not drop out in the PDF
   async function printStaffArchiveDossierPDF() {
     const boxTimeline = document.getElementById('boxTimelineChart');
     const boxCourse = document.getElementById('boxCourseChart');
 
-    // 1. Snapshot charts to permanent base64 images
     const timelineImgUrl = staffArchiveTimelineChartInstance.toBase64Image();
     const courseImgUrl = staffArchiveCourseChartInstance.toBase64Image();
 
-    // 2. Temporarily swap canvas for image tag
     boxTimeline.innerHTML = `<img src="${timelineImgUrl}" style="width:100%; height:190px; object-fit:contain;">`;
     boxCourse.innerHTML = `<img src="${courseImgUrl}" style="width:100%; height:190px; object-fit:contain;">`;
 
@@ -1518,7 +1664,7 @@
 
     await html2pdf().set(opt).from(el).save();
 
-    // 3. Re-instantiate interactive charts for on-screen exploration
+    // Reconstruct interactive Chart.js canvases after download
     boxTimeline.innerHTML = '<canvas id="staffArchiveTimelineChart"></canvas>';
     boxCourse.innerHTML = '<canvas id="staffArchiveCourseChart"></canvas>';
 
