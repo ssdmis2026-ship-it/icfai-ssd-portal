@@ -9,6 +9,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- PDF Engine for Clean Executive Dossier Generation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     :root {
@@ -324,6 +325,18 @@
       100% { opacity: 0; transform: scale(0.85) translateY(-15px); }
     }
 
+    /* Fixed Print Layout Canvas (Eliminates PDF clipping) */
+    .print-document-canvas {
+      width: 800px;
+      background: #ffffff;
+      padding: 30px;
+      box-sizing: border-box;
+      color: #0f172a;
+      border-radius: 12px;
+      margin: auto;
+      border: 1px solid #cbd5e1;
+    }
+
     .subtle-footer {
       width: 100%;
       text-align: center;
@@ -397,7 +410,7 @@
     </div>
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
       <button class="neu-btn" type="button" onclick="exportMasterCSV()">Download Full Report (CSV)</button>
-      <button class="neu-btn" type="button" style="color:var(--green);" onclick="printExecutiveReportPDF()">Export Dossier (PDF)</button>
+      <button class="neu-btn" type="button" style="color:var(--green);" onclick="printExecutiveReportPDF()">Export Live Dossier (PDF)</button>
       <button class="neu-btn" type="button" onclick="location.reload()">Lock Session</button>
     </div>
   </div>
@@ -410,7 +423,7 @@
     <button class="nav-btn" id="tabNavSettings" onclick="switchMainTab('settings')">Master Settings & Management</button>
   </div>
 
-  <!-- VIEW 1: LIVE ANALYTICS -->
+  <!-- VIEW 1: LIVE OPERATIONAL ANALYTICS -->
   <div id="analyticsSection">
     
     <div class="kpi-row">
@@ -567,7 +580,7 @@
     <div class="neu-card">
       <h3 style="color:var(--primary); margin-top:0;">Historical 4-Month Archive Deep-Dive Analyzer</h3>
       <p style="font-size:13px; color:var(--subtext); margin-bottom:15px;">
-        Upload any previously exported semester CSV archive to reconstruct charts, text analytics, heatmaps, and staff appraisals offline for presentations to the College Head.
+        Upload any previously exported semester CSV archive to reconstruct complete charts, text analytics, heatmaps, and staff appraisals offline for presentations to the College Head.
       </p>
 
       <div style="background:#f8fafc; border:1px dashed #cbd5e1; padding:20px; border-radius:14px; text-align:center;">
@@ -578,20 +591,72 @@
       <div id="archiveAnalyticsOutput" style="display:none; margin-top:25px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #cbd5e1; padding-bottom:8px;">
           <h4 id="archiveReportTitle" style="color:var(--primary); margin:0;">Historical Analysis Overview</h4>
-          <button class="neu-btn" style="color:var(--green); font-size:12px; padding:6px 14px;" onclick="printArchiveDossierPDF()">Export Presentation PDF</button>
+          <button class="neu-btn" style="color:var(--green); font-size:13px; padding:8px 16px;" onclick="printArchiveDossierPDF()">Download Executive Dossier (PDF)</button>
         </div>
 
-        <div class="kpi-row" id="archiveKpis"></div>
+        <!-- Printable Document Canvas for Head Archive (Fixed A4 Width) -->
+        <div id="printableHeadArchiveCanvas" class="print-document-canvas">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #1e3a8a; padding-bottom:12px; margin-bottom:20px;">
+            <div>
+              <h2 style="color:#1e3a8a; margin:0; font-size:22px;">SSD Departmental Semester Audit Dossier</h2>
+              <div style="font-size:13px; color:#475569; margin-top:3px;">Student Service Department • University Leadership Presentation</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:14px; font-weight:800; color:#1e3a8a;">Official Audit Report</div>
+              <div id="archiveDossierDate" style="font-size:12px; color:#64748b;">Generated: 2026</div>
+            </div>
+          </div>
 
-        <div class="grid-2" style="margin-top:20px;">
-          <div class="neu-card" style="margin-bottom:0;">
-            <h4 style="color:var(--primary); margin:0 0 10px 0;">Archived Influx Volume</h4>
-            <div class="chart-box"><canvas id="archiveTimelineChart"></canvas></div>
+          <!-- KPI Grid -->
+          <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:24px;" id="archiveKpis"></div>
+
+          <!-- Printable Charts Row -->
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:24px;">
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px; border-radius:10px;">
+              <div style="font-size:12px; font-weight:700; color:#1e3a8a; margin-bottom:8px;">Inquiry Influx Volume</div>
+              <div style="height:190px;"><canvas id="archiveTimelineChart"></canvas></div>
+            </div>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px; border-radius:10px;">
+              <div style="font-size:12px; font-weight:700; color:#7c3aed; margin-bottom:8px;">Hourly Peak Traffic Distribution</div>
+              <div style="height:190px;"><canvas id="archiveHourlyChart"></canvas></div>
+            </div>
           </div>
-          <div class="neu-card" style="margin-bottom:0;">
-            <h4 style="color:var(--purple); margin:0 0 10px 0;">Archived Peak Traffic Hours</h4>
-            <div class="chart-box"><canvas id="archiveHourlyChart"></canvas></div>
-          </div>
+
+          <!-- Staff Performance Summary -->
+          <h4 style="color:#1e3a8a; margin:0 0 8px 0; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">Staff Performance & Resolution Summary</h4>
+          <table style="width:100%; border-collapse:collapse; font-size:11.5px; text-align:left; margin-bottom:24px;">
+            <thead>
+              <tr style="background:#f1f5f9; color:#475569;">
+                <th style="padding:8px;">Staff Member</th>
+                <th style="padding:8px;">Assigned</th>
+                <th style="padding:8px;">Resolved</th>
+                <th style="padding:8px;">Pending</th>
+                <th style="padding:8px;">Avg TAT Speed</th>
+                <th style="padding:8px;">Resolution Rate</th>
+              </tr>
+            </thead>
+            <tbody id="archiveStaffTableBody"></tbody>
+          </table>
+
+          <!-- Recurring Concern Keywords -->
+          <h4 style="color:#1e3a8a; margin:0 0 8px 0; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">Frequent Inquiry Themes & Concerns</h4>
+          <div id="archiveKeywordsCloud" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:24px;"></div>
+
+          <!-- Interaction Audit Log -->
+          <h4 style="color:#1e3a8a; margin:0 0 8px 0; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">Semester Interaction Audit Log (First 100 Sampled)</h4>
+          <table style="width:100%; border-collapse:collapse; font-size:11px; text-align:left;">
+            <thead>
+              <tr style="background:#f1f5f9; color:#475569;">
+                <th style="padding:6px;">Visitor</th>
+                <th style="padding:6px;">Course</th>
+                <th style="padding:6px;">Staff Desk</th>
+                <th style="padding:6px;">Query Description</th>
+                <th style="padding:6px;">Status</th>
+                <th style="padding:6px;">Resolution Remarks</th>
+              </tr>
+            </thead>
+            <tbody id="archiveTableLogBody"></tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -1175,17 +1240,14 @@
   async function execute4MonthDownloadAndReset() {
     if (!confirm("Are you ready to download the 4-month database archive and reset live historical records?")) return;
     
-    // 1. Export CSV
     exportMasterCSV();
 
-    // 2. Wait 2 seconds for download, then prompt confirmation to purge
     setTimeout(async () => {
       if (!confirm("Did your browser successfully download the audit file? Click OK to reset historical records to keep the portal fast.")) return;
       
       const pwd = prompt("Enter SSD Head Master Password to authorize database cycle reset:");
       if (pwd !== masterHeadPassword) return alert("Authorization failed. Reset aborted.");
 
-      // Purge all resolved enquiries
       const batch = db.batch();
       let deleteCount = 0;
       masterRecords.forEach(r => {
@@ -1197,7 +1259,6 @@
 
       await batch.commit();
 
-      // Reset timestamp tracker
       await db.collection('settings').doc('systemArchive').set({
         lastArchivedTimestamp: Date.now(),
         lastArchivedDate: new Date().toISOString(),
@@ -1556,7 +1617,7 @@
     document.getElementById('drilldownModal').style.display = 'flex';
   }
 
-  // Historical Archive File Analyzer Engine
+  // Historical Archive File Analyzer Engine (With Staff Roster & Text Mining)
   function processHistoricalArchiveFile() {
     const file = document.getElementById('archiveFileInput').files[0];
     if (!file) return alert("Select a previously downloaded archive CSV file.");
@@ -1575,17 +1636,32 @@
   function renderArchiveDashboard(fileName) {
     document.getElementById('archiveAnalyticsOutput').style.display = 'block';
     document.getElementById('archiveReportTitle').innerText = "Historical Report: " + fileName;
+    document.getElementById('archiveDossierDate').innerText = "Generated: " + new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
 
-    let res = 0, stu = 0, fac = 0;
+    let res = 0, stu = 0, fac = 0, guest = 0, totalTAT = 0, tatCount = 0;
     let hourly = { "09:00": 0, "10:00": 0, "11:00": 0, "12:00": 0, "13:00": 0, "14:00": 0, "15:00": 0, "16:00": 0, "17:00": 0 };
     let timeline = {};
+    let staffSummary = {};
+    let keywords = {};
+    const stopWords = ["this", "that", "have", "from", "with", "what", "some", "please", "regarding", "about", "want", "need", "issue", "help", "detail", "details", "there", "query", "queries"];
 
     archivedRecords.forEach(r => {
-      if ((r.Status || '').toLowerCase().includes('resolved')) res++;
-      if ((r.Type || '').toLowerCase().includes('faculty')) fac++;
-      else if ((r.Type || '').toLowerCase().includes('student')) stu++;
+      const status = (r.Status || r.status || '').toLowerCase();
+      const isRes = status.includes('resolved');
+      if (isRes) res++;
 
-      const dateStr = r["Created Date"] || '';
+      const type = (r.Type || r.type || '').toLowerCase();
+      if (type.includes('faculty')) fac++;
+      else if (type.includes('guest') || type.includes('general')) guest++;
+      else stu++;
+
+      const dur = parseFloat(r["Handling Duration (Mins)"] || r.handlingDurationMinutes || 0);
+      if (isRes && dur > 0 && dur <= 180) {
+        totalTAT += dur;
+        tatCount++;
+      }
+
+      const dateStr = r["Created Date"] || r.createdDate || '';
       if (dateStr) {
         const dKey = dateStr.substring(0, 10);
         timeline[dKey] = (timeline[dKey] || 0) + 1;
@@ -1593,16 +1669,51 @@
         const slot = (h < 10 ? '0' + h : String(h)) + ':00';
         if (hourly[slot] !== undefined) hourly[slot]++;
       }
+
+      // Staff breakdown
+      const s = r["Assigned Staff"] || r.assignedStaff || 'Unassigned';
+      if (!staffSummary[s]) staffSummary[s] = { assigned: 0, resolved: 0, totalTAT: 0, tatCount: 0 };
+      staffSummary[s].assigned++;
+      if (isRes) {
+        staffSummary[s].resolved++;
+        if (dur > 0 && dur <= 180) {
+          staffSummary[s].totalTAT += dur;
+          staffSummary[s].tatCount++;
+        }
+      }
+
+      // Keyword mining
+      const q = (r.Query || r.query || '').toLowerCase().replace(/[^a-zA-Z ]/g, " ").split(/\s+/);
+      q.forEach(w => {
+        if (w.length > 3 && !stopWords.includes(w)) keywords[w] = (keywords[w] || 0) + 1;
+      });
     });
 
+    const avgTAT = tatCount > 0 ? (totalTAT / tatCount).toFixed(1) + 'm' : 'N/A';
+    const rate = archivedRecords.length ? Math.round((res / archivedRecords.length) * 100) + '%' : '100%';
+
+    // KPIs Grid
     const kpiEl = document.getElementById('archiveKpis');
     kpiEl.innerHTML = `
-      <div class="neu-card" style="margin:0;"><span style="font-size:11px; font-weight:700; color:var(--subtext);">ARCHIVED INQUIRIES</span><div class="stat-val" style="color:var(--primary);">${archivedRecords.length}</div></div>
-      <div class="neu-card" style="margin:0;"><span style="font-size:11px; font-weight:700; color:var(--accent);">STUDENT QUERIES</span><div class="stat-val" style="color:var(--accent);">${stu}</div></div>
-      <div class="neu-card" style="margin:0;"><span style="font-size:11px; font-weight:700; color:var(--crimson);">FACULTY QUERIES</span><div class="stat-val" style="color:var(--crimson);">${fac}</div></div>
-      <div class="neu-card" style="margin:0;"><span style="font-size:11px; font-weight:700; color:var(--green);">RESOLUTION RATE</span><div class="stat-val" style="color:var(--green);">${Math.round((res / archivedRecords.length) * 100)}%</div></div>
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px; border-radius:10px; text-align:center;">
+        <div style="font-size:11px; font-weight:700; color:#64748b;">TOTAL INQUIRIES</div>
+        <div style="font-size:22px; font-weight:800; color:#1e3a8a; margin-top:4px;">${archivedRecords.length}</div>
+      </div>
+      <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:12px; border-radius:10px; text-align:center;">
+        <div style="font-size:11px; font-weight:700; color:#166534;">RESOLVED QUERIES</div>
+        <div style="font-size:22px; font-weight:800; color:#16a34a; margin-top:4px;">${res}</div>
+      </div>
+      <div style="background:#eff6ff; border:1px solid #bfdbfe; padding:12px; border-radius:10px; text-align:center;">
+        <div style="font-size:11px; font-weight:700; color:#1e40af;">RESOLUTION RATE</div>
+        <div style="font-size:22px; font-weight:800; color:#2563eb; margin-top:4px;">${rate}</div>
+      </div>
+      <div style="background:#fef3c7; border:1px solid #fde68a; padding:12px; border-radius:10px; text-align:center;">
+        <div style="font-size:11px; font-weight:700; color:#b45309;">AVG SPEED (TAT)</div>
+        <div style="font-size:22px; font-weight:800; color:#d97706; margin-top:4px;">${avgTAT}</div>
+      </div>
     `;
 
+    // Timeline Chart
     const dates = Object.keys(timeline).sort();
     if (archiveTimelineChartInstance) archiveTimelineChartInstance.destroy();
     archiveTimelineChartInstance = new Chart(document.getElementById('archiveTimelineChart'), {
@@ -1614,6 +1725,7 @@
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
 
+    // Hourly Chart
     const hours = Object.keys(hourly);
     if (archiveHourlyChartInstance) archiveHourlyChartInstance.destroy();
     archiveHourlyChartInstance = new Chart(document.getElementById('archiveHourlyChart'), {
@@ -1624,30 +1736,73 @@
       },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
+
+    // Staff Table
+    const staffTbody = document.getElementById('archiveStaffTableBody');
+    staffTbody.innerHTML = '';
+    Object.keys(staffSummary).forEach(stName => {
+      const s = staffSummary[stName];
+      const sTAT = s.tatCount > 0 ? (s.totalTAT / s.tatCount).toFixed(1) + 'm' : 'N/A';
+      const sRate = s.assigned ? Math.round((s.resolved / s.assigned) * 100) + '%' : '100%';
+      staffTbody.innerHTML += `
+        <tr style="border-bottom:1px solid #e2e8f0;">
+          <td style="padding:7px; font-weight:700;">${stName}</td>
+          <td style="padding:7px;">${s.assigned}</td>
+          <td style="padding:7px; color:green;">${s.resolved}</td>
+          <td style="padding:7px; color:red;">${s.assigned - s.resolved}</td>
+          <td style="padding:7px; font-weight:700;">${sTAT}</td>
+          <td style="padding:7px; font-weight:700;">${sRate}</td>
+        </tr>
+      `;
+    });
+
+    // Keywords Cloud
+    const kwEl = document.getElementById('archiveKeywordsCloud');
+    kwEl.innerHTML = '';
+    const topKeywords = Object.entries(keywords).sort((a,b) => b[1] - a[1]).slice(0, 16);
+    topKeywords.forEach(([w, count]) => {
+      kwEl.innerHTML += `<span class="tag"><b>${w}</b> <span style="color:var(--accent); font-weight:800;">${count}</span></span>`;
+    });
+
+    // Full Log Table (Sampled to first 100 for clean print boundaries)
+    const logTbody = document.getElementById('archiveTableLogBody');
+    logTbody.innerHTML = '';
+    archivedRecords.slice(0, 100).forEach(r => {
+      logTbody.innerHTML += `
+        <tr style="border-bottom:1px solid #e2e8f0;">
+          <td style="padding:6px; font-weight:600;">${r.Name || r.name || 'N/A'}</td>
+          <td style="padding:6px;">${r.Course || r.course || 'General'}</td>
+          <td style="padding:6px;">${r["Assigned Staff"] || r.assignedStaff || 'Unassigned'}</td>
+          <td style="padding:6px; max-width:230px;">${r.Query || r.query || ''}</td>
+          <td style="padding:6px; font-weight:700; color:${(r.Status || '').includes('Resolved') ? 'green' : 'red'};">${r.Status || r.status || 'Resolved'}</td>
+          <td style="padding:6px; color:#166534;">${r["Solution Remarks"] || r.solution || 'Resolved'}</td>
+        </tr>
+      `;
+    });
   }
 
+  // Print Executive Dossier from Canvas (Fixed width eliminates clipping)
   function printArchiveDossierPDF() {
-    const el = document.getElementById('archiveAnalyticsOutput');
+    const el = document.getElementById('printableHeadArchiveCanvas');
     const opt = {
-      margin: 10,
-      filename: `SSD_Semester_Archive_Dossier_${new Date().toISOString().substring(0, 10)}.pdf`,
+      margin: [10, 10, 10, 10],
+      filename: `SSD_Semester_Executive_Dossier_${new Date().toISOString().substring(0, 10)}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      html2canvas: { scale: 2, useCORS: true, width: 800 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
     html2pdf().set(opt).from(el).save();
   }
 
   function printExecutiveReportPDF() {
-    const el = document.getElementById('analyticsSection');
     const opt = {
-      margin: 10,
-      filename: `SSD_Executive_Audit_Report_${new Date().toISOString().substring(0, 10)}.pdf`,
+      margin: [10, 10, 10, 10],
+      filename: `SSD_Live_Operations_Report_${new Date().toISOString().substring(0, 10)}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
+      html2canvas: { scale: 2, useCORS: true },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
     };
-    html2pdf().set(opt).from(el).save();
+    html2pdf().set(opt).from(document.getElementById('analyticsSection')).save();
   }
 
   // Student 360° Profile Lookup
