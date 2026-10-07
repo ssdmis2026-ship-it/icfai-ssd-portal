@@ -8,6 +8,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <!-- PDF Engine for Clean Executive Dossier Generation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     :root {
@@ -272,15 +273,20 @@
       100% { opacity: 0; transform: scale(0.85) translateY(-15px); }
     }
 
-    /* Fixed Print Layout Sheet to prevent PDF cut-offs */
-    #printDossierCanvas {
-      width: 800px;
+    /* Fixed Printable Sheet Container (Prevents horizontal cutoffs and weird breaks) */
+    .print-document-canvas {
+      width: 760px;
       background: #ffffff;
       padding: 30px;
       box-sizing: border-box;
       color: #0f172a;
       border-radius: 8px;
       margin: auto;
+      border: 1px solid #cbd5e1;
+    }
+    .page-break-avoid {
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
 
     .subtle-footer {
@@ -297,7 +303,6 @@
 </head>
 <body>
 
-<!-- Motion Welcome Greeting Toast -->
 <div id="welcomeToastOverlay">
   <div class="welcome-card" id="welcomeToastBox">
     <div style="width:64px; height:64px; border-radius:50%; background:#dbeafe; display:flex; align-items:center; justify-content:center; margin: 0 auto 16px auto; box-shadow: inset 3px 3px 6px var(--dark-shadow), inset -3px -3px 6px var(--light-shadow);">
@@ -402,7 +407,7 @@
       <span>Live Desk Queue</span>
     </button>
     <button class="tab-item" id="btnTabMyAnalytics" type="button" onclick="switchMainStaffTab('analytics')">
-      <span>My Performance Dossier</span>
+      <span>My Live Appraisal Dossier</span>
     </button>
     <button class="tab-item" id="btnTabStaffArchive" type="button" onclick="switchMainStaffTab('archive')">
       <span>Historical Archive Analyzer</span>
@@ -453,74 +458,72 @@
     </div>
   </div>
 
-  <!-- SECTION 2: MY INDIVIDUAL PERFORMANCE DOSSIER (LIVE PERFORMANCE AUDIT) -->
+  <!-- SECTION 2: MY INDIVIDUAL APPRAISAL DOSSIER (LIVE PERFORMANCE AUDIT) -->
   <div id="staffAnalyticsSection" style="display:none;">
     <div class="neu-card">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:1px solid #cbd5e1; padding-bottom:10px;">
         <div>
-          <h3 style="color:var(--primary); margin:0;">Personal Performance Audit & Appraisal</h3>
-          <p style="font-size:13px; color:var(--subtext); margin:3px 0 0 0;">Comprehensive evaluation of queries handled at your desk.</p>
+          <h3 style="color:var(--primary); margin:0;">Staff Appraisal & Performance Dossier</h3>
+          <p style="font-size:13px; color:var(--subtext); margin:3px 0 0 0;">Official evaluation report of queries assigned and resolved at your desk.</p>
         </div>
-        <button class="neu-btn" style="color:var(--green);" onclick="printLiveStaffDossierPDF()">Download Appraisal Dossier (PDF)</button>
+        <button class="neu-btn" style="color:var(--green); font-size:13px; padding:8px 16px;" onclick="printLiveStaffDossierPDF()">Download Staff Appraisal (PDF)</button>
       </div>
 
-      <!-- Printable Area -->
-      <div id="liveStaffPrintWrapper">
-        <div id="printDossierCanvas">
-          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #1e3a8a; padding-bottom:10px; margin-bottom:20px;">
-            <div>
-              <h2 style="color:#1e3a8a; margin:0; font-size:22px;">SSD Staff Performance Evaluation Dossier</h2>
-              <div style="font-size:12.5px; color:#475569; margin-top:2px;">ICFAI Student Service Department • Official Appraisal Record</div>
-            </div>
-            <div style="text-align:right;">
-              <div id="liveDossierStaffName" style="font-size:16px; font-weight:800; color:#1e3a8a;">Officer Profile</div>
-              <div id="liveDossierDate" style="font-size:12px; color:#64748b;">Generated: 2026</div>
-            </div>
+      <!-- Printable Area with Fixed A4 Print Geometry -->
+      <div class="print-document-canvas" id="liveStaffPrintWrapper">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #1e3a8a; padding-bottom:12px; margin-bottom:20px;">
+          <div>
+            <h2 style="color:#1e3a8a; margin:0; font-size:22px;">SSD Staff Performance Appraisal Dossier</h2>
+            <div style="font-size:13px; color:#475569; margin-top:3px;">Student Service Department • Official University Evaluation</div>
           </div>
-
-          <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:22px;">
-            <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px; border-radius:10px; text-align:center;">
-              <div style="font-size:11px; font-weight:700; color:#64748b;">TOTAL ASSIGNED</div>
-              <div id="liveDossierTotal" style="font-size:22px; font-weight:800; color:#1e3a8a; margin-top:4px;">0</div>
-            </div>
-            <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:12px; border-radius:10px; text-align:center;">
-              <div style="font-size:11px; font-weight:700; color:#166534;">RESOLVED QUERIES</div>
-              <div id="liveDossierResolved" style="font-size:22px; font-weight:800; color:#16a34a; margin-top:4px;">0</div>
-            </div>
-            <div style="background:#fef2f2; border:1px solid #fecaca; padding:12px; border-radius:10px; text-align:center;">
-              <div style="font-size:11px; font-weight:700; color:#991b1b;">RESOLUTION RATE</div>
-              <div id="liveDossierRate" style="font-size:22px; font-weight:800; color:#dc2626; margin-top:4px;">0%</div>
-            </div>
-            <div style="background:#eff6ff; border:1px solid #bfdbfe; padding:12px; border-radius:10px; text-align:center;">
-              <div style="font-size:11px; font-weight:700; color:#1e40af;">AVG SPEED (TAT)</div>
-              <div id="liveDossierTAT" style="font-size:22px; font-weight:800; color:#2563eb; margin-top:4px;">0m</div>
-            </div>
+          <div style="text-align:right;">
+            <div id="liveDossierStaffName" style="font-size:15px; font-weight:800; color:#1e3a8a;">Staff Officer</div>
+            <div id="liveDossierDate" style="font-size:12px; color:#64748b;">Generated: 2026</div>
           </div>
-
-          <h4 style="color:#1e3a8a; margin:0 0 8px 0; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">Complete Interaction History</h4>
-          <table style="width:100%; border-collapse:collapse; font-size:11.5px; text-align:left;">
-            <thead>
-              <tr style="background:#f1f5f9; color:#475569;">
-                <th style="padding:7px;">Visitor Name</th>
-                <th style="padding:7px;">Enroll / Details</th>
-                <th style="padding:7px;">Query Summary</th>
-                <th style="padding:7px;">Resolution Remarks</th>
-                <th style="padding:7px;">TAT</th>
-              </tr>
-            </thead>
-            <tbody id="liveDossierTableBody"></tbody>
-          </table>
         </div>
+
+        <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:24px;">
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px; border-radius:10px; text-align:center;">
+            <div style="font-size:11px; font-weight:700; color:#64748b;">TOTAL ASSIGNED</div>
+            <div id="liveDossierTotal" style="font-size:22px; font-weight:800; color:#1e3a8a; margin-top:4px;">0</div>
+          </div>
+          <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:12px; border-radius:10px; text-align:center;">
+            <div style="font-size:11px; font-weight:700; color:#166534;">RESOLVED QUERIES</div>
+            <div id="liveDossierResolved" style="font-size:22px; font-weight:800; color:#16a34a; margin-top:4px;">0</div>
+          </div>
+          <div style="background:#fef2f2; border:1px solid #fecaca; padding:12px; border-radius:10px; text-align:center;">
+            <div style="font-size:11px; font-weight:700; color:#991b1b;">RESOLUTION RATE</div>
+            <div id="liveDossierRate" style="font-size:22px; font-weight:800; color:#dc2626; margin-top:4px;">0%</div>
+          </div>
+          <div style="background:#eff6ff; border:1px solid #bfdbfe; padding:12px; border-radius:10px; text-align:center;">
+            <div style="font-size:11px; font-weight:700; color:#1e40af;">AVG SPEED (TAT)</div>
+            <div id="liveDossierTAT" style="font-size:22px; font-weight:800; color:#2563eb; margin-top:4px;">0m</div>
+          </div>
+        </div>
+
+        <h4 style="color:#1e3a8a; margin:0 0 8px 0; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">Detailed Interaction History Log</h4>
+        <table style="width:100%; border-collapse:collapse; font-size:11.5px; text-align:left;">
+          <thead>
+            <tr style="background:#f1f5f9; color:#475569;">
+              <th style="padding:8px;">Visitor Name</th>
+              <th style="padding:8px;">Program</th>
+              <th style="padding:8px;">Query Details</th>
+              <th style="padding:8px;">Resolution Remarks</th>
+              <th style="padding:8px;">TAT</th>
+            </tr>
+          </thead>
+          <tbody id="liveDossierTableBody"></tbody>
+        </table>
       </div>
     </div>
   </div>
 
-  <!-- SECTION 3: HISTORICAL ARCHIVE ANALYZER FOR STAFF -->
+  <!-- SECTION 3: HISTORICAL ARCHIVE ANALYZER FOR STAFF (WITH DETAILED PDF) -->
   <div id="staffArchiveSection" style="display:none;">
     <div class="neu-card">
-      <h3 style="color:var(--primary); margin-top:0;">Historical 4-Month Archive Performance Analyzer</h3>
+      <h3 style="color:var(--primary); margin-top:0;">Historical 4-Month Archive Deep-Dive Analyzer</h3>
       <p style="font-size:13px; color:var(--subtext); margin-bottom:16px;">
-        Upload your downloaded personal CSV archive (or the master college CSV archive) to reconstruct full charts, text analytics, and appraisal metrics offline.
+        Upload your downloaded personal CSV archive (or the master college CSV archive) to reconstruct comprehensive charts, text analytics, and download an official appraisal dossier PDF.
       </p>
 
       <div style="background:#f8fafc; border:1px dashed #cbd5e1; padding:22px; border-radius:14px; text-align:center;">
@@ -531,44 +534,58 @@
       <div id="staffArchiveAnalyticsView" style="display:none; margin-top:25px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #cbd5e1; padding-bottom:8px;">
           <h4 id="staffArchiveReportTitle" style="color:var(--primary); margin:0;">Historical Analysis Overview</h4>
-          <button class="neu-btn" style="color:var(--green); font-size:12px; padding:6px 14px;" onclick="printStaffArchiveDossierPDF()">Download Archive Appraisal PDF</button>
+          <button class="neu-btn" style="color:var(--green); font-size:13px; padding:8px 16px;" onclick="printStaffArchiveDossierPDF()">Download Archive Appraisal (PDF)</button>
         </div>
 
-        <div class="kpi-row" id="staffArchiveKpis"></div>
-
-        <div class="grid-2" style="margin-top:15px;">
-          <div class="neu-card" style="margin-bottom:0;">
-            <h4 style="color:var(--primary); margin:0 0 8px 0; font-size:14px;">Inquiry Timeline by Date</h4>
-            <div class="chart-box"><canvas id="staffArchiveTimelineChart"></canvas></div>
+        <!-- Printable Document Canvas for Staff Archive (Fixed A4 Geometry) -->
+        <div id="printableStaffArchiveCanvas" class="print-document-canvas">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #1e3a8a; padding-bottom:12px; margin-bottom:20px;">
+            <div>
+              <h2 style="color:#1e3a8a; margin:0; font-size:22px;">SSD Staff Semester Appraisal Dossier</h2>
+              <div style="font-size:13px; color:#475569; margin-top:3px;">Student Service Department • University Performance Evaluation</div>
+            </div>
+            <div style="text-align:right;">
+              <div id="archiveStaffTitleName" style="font-size:15px; font-weight:800; color:#1e3a8a;">Officer Profile</div>
+              <div id="archiveDossierDateStaff" style="font-size:12px; color:#64748b;">Generated: 2026</div>
+            </div>
           </div>
-          <div class="neu-card" style="margin-bottom:0;">
-            <h4 style="color:var(--accent); margin:0 0 8px 0; font-size:14px;">Program / Demographics Distribution</h4>
-            <div class="chart-box"><canvas id="staffArchiveCourseChart"></canvas></div>
-          </div>
-        </div>
 
-        <div class="neu-card" style="margin-top:20px;">
-          <h4 style="color:var(--primary); margin:0 0 8px 0; font-size:14px;">Top Recurring Concern Keywords</h4>
-          <div id="staffArchiveKeywords" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
-        </div>
+          <!-- KPI Cards -->
+          <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:24px;" id="staffArchiveKpis"></div>
 
-        <div class="neu-card" style="margin-top:20px;">
-          <h4 style="color:var(--primary); margin:0 0 10px 0; font-size:14px;">Detailed Historical Records Log</h4>
-          <div style="overflow-x:auto; max-height:260px;">
-            <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left;">
-              <thead style="background:#f1f5f9; position:sticky; top:0;">
-                <tr style="color:#475569;">
-                  <th style="padding:8px;">Visitor</th>
-                  <th style="padding:8px;">Program</th>
-                  <th style="padding:8px;">Query</th>
-                  <th style="padding:8px;">Status</th>
-                  <th style="padding:8px;">Resolution Remarks</th>
-                  <th style="padding:8px;">Duration</th>
-                </tr>
-              </thead>
-              <tbody id="staffArchiveTableBody"></tbody>
-            </table>
+          <!-- Charts Row (Side-by-Side without horizontal cutoff) -->
+          <div class="page-break-avoid" style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:24px;">
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px; border-radius:10px;">
+              <div style="font-size:12px; font-weight:700; color:#1e3a8a; margin-bottom:8px;">Inquiry Timeline by Date</div>
+              <div style="height:190px;"><canvas id="staffArchiveTimelineChart"></canvas></div>
+            </div>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px; border-radius:10px;">
+              <div style="font-size:12px; font-weight:700; color:#7c3aed; margin-bottom:8px;">Program / Demographics Distribution</div>
+              <div style="height:190px;"><canvas id="staffArchiveCourseChart"></canvas></div>
+            </div>
           </div>
+
+          <!-- Top Recurring Keywords -->
+          <div class="page-break-avoid" style="margin-bottom:24px;">
+            <h4 style="color:#1e3a8a; margin:0 0 8px 0; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">Frequent Inquiry Themes & Concerns Handled</h4>
+            <div id="staffArchiveKeywords" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+          </div>
+
+          <!-- Detailed Historical Table Log -->
+          <h4 style="color:#1e3a8a; margin:0 0 8px 0; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">Historical Interaction Audit Log</h4>
+          <table style="width:100%; border-collapse:collapse; font-size:11px; text-align:left;">
+            <thead>
+              <tr style="background:#f1f5f9; color:#475569;">
+                <th style="padding:6px;">Visitor Name</th>
+                <th style="padding:6px;">Program</th>
+                <th style="padding:6px;">Query Description</th>
+                <th style="padding:6px;">Status</th>
+                <th style="padding:6px;">Resolution Remarks</th>
+                <th style="padding:6px;">TAT</th>
+              </tr>
+            </thead>
+            <tbody id="staffArchiveTableBody"></tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -1322,12 +1339,12 @@
   }
 
   function printLiveStaffDossierPDF() {
-    const el = document.getElementById('printDossierCanvas');
+    const el = document.getElementById('liveStaffPrintWrapper');
     const opt = {
       margin: [10, 10, 10, 10],
-      filename: `SSD_Staff_Appraisal_${activeStaff.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().substring(0, 10)}.pdf`,
+      filename: `SSD_Staff_Live_Appraisal_${activeStaff.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().substring(0, 10)}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, width: 800 },
+      html2canvas: { scale: 2, useCORS: true, width: 760 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
     html2pdf().set(opt).from(el).save();
@@ -1350,7 +1367,7 @@
         });
 
         if (!staffArchivedRecords.length) {
-          staffArchivedRecords = raw; // Use entire dataset if personal filter yields empty
+          staffArchivedRecords = raw;
         }
 
         renderStaffArchiveDashboard(file.name);
@@ -1361,6 +1378,8 @@
   function renderStaffArchiveDashboard(fileName) {
     document.getElementById('staffArchiveAnalyticsView').style.display = 'block';
     document.getElementById('staffArchiveReportTitle').innerText = "Historical Appraisal Audit: " + fileName;
+    document.getElementById('archiveStaffTitleName').innerText = activeStaff;
+    document.getElementById('archiveDossierDateStaff').innerText = "Generated: " + new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
 
     let res = 0, stu = 0, fac = 0, totalTAT = 0, tatCount = 0;
     let timeline = {};
@@ -1370,14 +1389,15 @@
 
     staffArchivedRecords.forEach(r => {
       const status = (r.Status || r.status || '').toLowerCase();
-      if (status.includes('resolved')) res++;
+      const isRes = status.includes('resolved');
+      if (isRes) res++;
 
       const type = (r.Type || r.type || '').toLowerCase();
       if (type.includes('faculty')) fac++;
       else stu++;
 
       const dur = parseFloat(r["Handling Duration (Mins)"] || r.handlingDurationMinutes || 0);
-      if (dur > 0 && dur <= 180) {
+      if (isRes && dur > 0 && dur <= 180) {
         totalTAT += dur;
         tatCount++;
       }
@@ -1405,10 +1425,22 @@
 
     const kpiEl = document.getElementById('staffArchiveKpis');
     kpiEl.innerHTML = `
-      <div class="neu-card" style="margin:0;"><span style="font-size:11px; font-weight:700; color:var(--subtext);">TOTAL INQUIRIES</span><div class="stat-val" style="color:var(--primary);">${staffArchivedRecords.length}</div></div>
-      <div class="neu-card" style="margin:0;"><span style="font-size:11px; font-weight:700; color:var(--green);">RESOLVED</span><div class="stat-val" style="color:var(--green);">${res}</div></div>
-      <div class="neu-card" style="margin:0;"><span style="font-size:11px; font-weight:700; color:var(--accent);">RESOLUTION RATE</span><div class="stat-val" style="color:var(--accent);">${rate}</div></div>
-      <div class="neu-card" style="margin:0;"><span style="font-size:11px; font-weight:700; color:var(--amber);">AVG TAT SPEED</span><div class="stat-val" style="color:var(--amber);">${avgTAT}</div></div>
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px; border-radius:10px; text-align:center;">
+        <div style="font-size:11px; font-weight:700; color:#64748b;">TOTAL INQUIRIES</div>
+        <div style="font-size:22px; font-weight:800; color:#1e3a8a; margin-top:4px;">${staffArchivedRecords.length}</div>
+      </div>
+      <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:12px; border-radius:10px; text-align:center;">
+        <div style="font-size:11px; font-weight:700; color:#166534;">RESOLVED QUERIES</div>
+        <div style="font-size:22px; font-weight:800; color:#16a34a; margin-top:4px;">${res}</div>
+      </div>
+      <div style="background:#eff6ff; border:1px solid #bfdbfe; padding:12px; border-radius:10px; text-align:center;">
+        <div style="font-size:11px; font-weight:700; color:#1e40af;">RESOLUTION RATE</div>
+        <div style="font-size:22px; font-weight:800; color:#2563eb; margin-top:4px;">${rate}</div>
+      </div>
+      <div style="background:#fef3c7; border:1px solid #fde68a; padding:12px; border-radius:10px; text-align:center;">
+        <div style="font-size:11px; font-weight:700; color:#b45309;">AVG SPEED (TAT)</div>
+        <div style="font-size:22px; font-weight:800; color:#d97706; margin-top:4px;">${avgTAT}</div>
+      </div>
     `;
 
     // Timeline Chart
@@ -1437,36 +1469,37 @@
     // Render Keywords
     const kwEl = document.getElementById('staffArchiveKeywords');
     kwEl.innerHTML = '';
-    const topKeywords = Object.entries(keywords).sort((a,b) => b[1] - a[1]).slice(0, 15);
+    const topKeywords = Object.entries(keywords).sort((a,b) => b[1] - a[1]).slice(0, 16);
     topKeywords.forEach(([w, count]) => {
-      kwEl.innerHTML += `<span class="tag"><b>${w}</b> <span style="color:var(--accent);">${count}</span></span>`;
+      kwEl.innerHTML += `<span class="tag"><b>${w}</b> <span style="color:var(--accent); font-weight:800;">${count}</span></span>`;
     });
 
-    // Render Table
+    // Render Full Log
     const tbody = document.getElementById('staffArchiveTableBody');
     tbody.innerHTML = '';
-    staffArchivedRecords.slice(0, 75).forEach(r => {
+    staffArchivedRecords.slice(0, 100).forEach(r => {
       tbody.innerHTML += `
         <tr style="border-bottom:1px solid #e2e8f0;">
-          <td style="padding:7px;"><b>${r["Visitor Name"] || r.Name || r.name || 'N/A'}</b></td>
-          <td style="padding:7px;">${r.Course || r.course || 'MBA'}</td>
-          <td style="padding:7px; font-size:11px; max-width:240px;">${r.Query || r.query || ''}</td>
-          <td style="padding:7px; font-weight:700; color:green;">${r.Status || r.status || 'Resolved'}</td>
-          <td style="padding:7px; font-size:11px; color:#166534;">${r["Solution Remarks"] || r.Remarks || r.solution || 'Resolved'}</td>
-          <td style="padding:7px; font-weight:700;">${r["Handling Duration (Mins)"] || r.handlingDurationMinutes || 1}m</td>
+          <td style="padding:6px; font-weight:600;">${r["Visitor Name"] || r.Name || r.name || 'N/A'}</td>
+          <td style="padding:6px;">${r.Course || r.course || 'MBA'}</td>
+          <td style="padding:6px; font-size:11px; max-width:240px;">${r.Query || r.query || ''}</td>
+          <td style="padding:6px; font-weight:700; color:${(r.Status || '').includes('Resolved') ? 'green' : 'red'};">${r.Status || r.status || 'Resolved'}</td>
+          <td style="padding:6px; font-size:11px; color:#166534;">${r["Solution Remarks"] || r.Remarks || r.solution || 'Resolved'}</td>
+          <td style="padding:6px; font-weight:700;">${r["Handling Duration (Mins)"] || r.handlingDurationMinutes || 1}m</td>
         </tr>
       `;
     });
   }
 
+  // Print Staff Archive Dossier using fixed 760px canvas
   function printStaffArchiveDossierPDF() {
-    const el = document.getElementById('staffArchiveAnalyticsView');
+    const el = document.getElementById('printableStaffArchiveCanvas');
     const opt = {
       margin: [10, 10, 10, 10],
-      filename: `SSD_Historical_Appraisal_${activeStaff.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().substring(0, 10)}.pdf`,
+      filename: `SSD_Staff_Historical_Dossier_${activeStaff.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().substring(0, 10)}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, width: 800 },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      html2canvas: { scale: 2, useCORS: true, width: 760 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
     html2pdf().set(opt).from(el).save();
   }
