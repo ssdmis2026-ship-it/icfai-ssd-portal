@@ -92,6 +92,7 @@
       transition: transform 0.15s ease;
     }
     .kpi-card:hover { transform: translateY(-2px); }
+    .kpi-card:active { transform: translateY(0); }
     .kpi-card .label { font-size: 12px; font-weight: 700; color: var(--subtext); }
     .kpi-card .val { font-size: 28px; font-weight: 800; margin-top: 6px; color: var(--primary); }
     .kpi-card .kpi-hint {
@@ -273,14 +274,14 @@
       100% { opacity: 0; transform: scale(0.85) translateY(-15px); }
     }
 
-    /* Fixed Printable Sheet Container (Prevents horizontal cutoffs and weird breaks) */
+    /* Print Document Styling */
     .print-document-canvas {
       width: 760px;
       background: #ffffff;
       padding: 30px;
       box-sizing: border-box;
       color: #0f172a;
-      border-radius: 8px;
+      border-radius: 10px;
       margin: auto;
       border: 1px solid #cbd5e1;
     }
@@ -303,6 +304,7 @@
 </head>
 <body>
 
+<!-- Motion Welcome Greeting Toast -->
 <div id="welcomeToastOverlay">
   <div class="welcome-card" id="welcomeToastBox">
     <div style="width:64px; height:64px; border-radius:50%; background:#dbeafe; display:flex; align-items:center; justify-content:center; margin: 0 auto 16px auto; box-shadow: inset 3px 3px 6px var(--dark-shadow), inset -3px -3px 6px var(--light-shadow);">
@@ -407,7 +409,7 @@
       <span>Live Desk Queue</span>
     </button>
     <button class="tab-item" id="btnTabMyAnalytics" type="button" onclick="switchMainStaffTab('analytics')">
-      <span>My Live Appraisal Dossier</span>
+      <span>My Performance Dossier</span>
     </button>
     <button class="tab-item" id="btnTabStaffArchive" type="button" onclick="switchMainStaffTab('archive')">
       <span>Historical Archive Analyzer</span>
@@ -458,22 +460,22 @@
     </div>
   </div>
 
-  <!-- SECTION 2: MY INDIVIDUAL APPRAISAL DOSSIER (LIVE PERFORMANCE AUDIT) -->
+  <!-- SECTION 2: MY INDIVIDUAL PERFORMANCE DOSSIER -->
   <div id="staffAnalyticsSection" style="display:none;">
     <div class="neu-card">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:1px solid #cbd5e1; padding-bottom:10px;">
         <div>
-          <h3 style="color:var(--primary); margin:0;">Staff Appraisal & Performance Dossier</h3>
+          <h3 style="color:var(--primary); margin:0;">Staff Performance Evaluation Report</h3>
           <p style="font-size:13px; color:var(--subtext); margin:3px 0 0 0;">Official evaluation report of queries assigned and resolved at your desk.</p>
         </div>
-        <button class="neu-btn" style="color:var(--green); font-size:13px; padding:8px 16px;" onclick="printLiveStaffDossierPDF()">Download Staff Appraisal (PDF)</button>
+        <button class="neu-btn" style="color:var(--green); font-size:13px; padding:8px 16px;" onclick="printLiveStaffDossierPDF()">Download Performance Dossier (PDF)</button>
       </div>
 
       <!-- Printable Area with Fixed A4 Print Geometry -->
       <div class="print-document-canvas" id="liveStaffPrintWrapper">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #1e3a8a; padding-bottom:12px; margin-bottom:20px;">
           <div>
-            <h2 style="color:#1e3a8a; margin:0; font-size:22px;">SSD Staff Performance Appraisal Dossier</h2>
+            <h2 style="color:#1e3a8a; margin:0; font-size:22px;">SSD Staff Performance Evaluation Report</h2>
             <div style="font-size:13px; color:#475569; margin-top:3px;">Student Service Department • Official University Evaluation</div>
           </div>
           <div style="text-align:right;">
@@ -518,12 +520,12 @@
     </div>
   </div>
 
-  <!-- SECTION 3: HISTORICAL ARCHIVE ANALYZER FOR STAFF (WITH DETAILED PDF) -->
+  <!-- SECTION 3: HISTORICAL ARCHIVE ANALYZER FOR STAFF (WITH HIGH-DPI CHARTS) -->
   <div id="staffArchiveSection" style="display:none;">
     <div class="neu-card">
       <h3 style="color:var(--primary); margin-top:0;">Historical 4-Month Archive Deep-Dive Analyzer</h3>
       <p style="font-size:13px; color:var(--subtext); margin-bottom:16px;">
-        Upload your downloaded personal CSV archive (or the master college CSV archive) to reconstruct comprehensive charts, text analytics, and download an official appraisal dossier PDF.
+        Upload your downloaded personal CSV archive (or the master college CSV archive) to reconstruct comprehensive charts, text analytics, and download an official performance report PDF.
       </p>
 
       <div style="background:#f8fafc; border:1px dashed #cbd5e1; padding:22px; border-radius:14px; text-align:center;">
@@ -534,14 +536,14 @@
       <div id="staffArchiveAnalyticsView" style="display:none; margin-top:25px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #cbd5e1; padding-bottom:8px;">
           <h4 id="staffArchiveReportTitle" style="color:var(--primary); margin:0;">Historical Analysis Overview</h4>
-          <button class="neu-btn" style="color:var(--green); font-size:13px; padding:8px 16px;" onclick="printStaffArchiveDossierPDF()">Download Archive Appraisal (PDF)</button>
+          <button class="neu-btn" style="color:var(--green); font-size:13px; padding:8px 16px;" onclick="printStaffArchiveDossierPDF()">Download Performance Dossier (PDF)</button>
         </div>
 
-        <!-- Printable Document Canvas for Staff Archive (Fixed A4 Geometry) -->
+        <!-- Printable Document Canvas for Staff Archive -->
         <div id="printableStaffArchiveCanvas" class="print-document-canvas">
           <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #1e3a8a; padding-bottom:12px; margin-bottom:20px;">
             <div>
-              <h2 style="color:#1e3a8a; margin:0; font-size:22px;">SSD Staff Semester Appraisal Dossier</h2>
+              <h2 style="color:#1e3a8a; margin:0; font-size:22px;">SSD Staff Semester Performance Dossier</h2>
               <div style="font-size:13px; color:#475569; margin-top:3px;">Student Service Department • University Performance Evaluation</div>
             </div>
             <div style="text-align:right;">
@@ -553,15 +555,15 @@
           <!-- KPI Cards -->
           <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:24px;" id="staffArchiveKpis"></div>
 
-          <!-- Charts Row (Side-by-Side without horizontal cutoff) -->
+          <!-- Charts Row: Converted to Vector/Image Snapshots to Avoid Canvas Disappearance in PDF -->
           <div class="page-break-avoid" style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:24px;">
             <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px; border-radius:10px;">
               <div style="font-size:12px; font-weight:700; color:#1e3a8a; margin-bottom:8px;">Inquiry Timeline by Date</div>
-              <div style="height:190px;"><canvas id="staffArchiveTimelineChart"></canvas></div>
+              <div id="boxTimelineChart" style="height:190px;"><canvas id="staffArchiveTimelineChart"></canvas></div>
             </div>
             <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px; border-radius:10px;">
               <div style="font-size:12px; font-weight:700; color:#7c3aed; margin-bottom:8px;">Program / Demographics Distribution</div>
-              <div style="height:190px;"><canvas id="staffArchiveCourseChart"></canvas></div>
+              <div id="boxCourseChart" style="height:190px;"><canvas id="staffArchiveCourseChart"></canvas></div>
             </div>
           </div>
 
@@ -1295,7 +1297,7 @@
     document.getElementById('staffDrilldownModal').style.display = 'none';
   }
 
-  // Live Performance Audit Dossier
+  // Live Performance Dossier
   function renderLiveStaffAnalytics() {
     const myTickets = allMasterTickets.filter(r => r.assignedStaff === activeStaff || r.resolvedBy === activeStaff);
     const resolvedTickets = myTickets.filter(r => r.status === 'Resolved');
@@ -1342,7 +1344,7 @@
     const el = document.getElementById('liveStaffPrintWrapper');
     const opt = {
       margin: [10, 10, 10, 10],
-      filename: `SSD_Staff_Live_Appraisal_${activeStaff.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().substring(0, 10)}.pdf`,
+      filename: `SSD_Staff_Performance_Report_${activeStaff.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().substring(0, 10)}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true, width: 760 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -1350,7 +1352,7 @@
     html2pdf().set(opt).from(el).save();
   }
 
-  // Historical CSV Archive Analyzer for Staff
+  // Historical CSV Archive Analyzer for Staff (Converts Canvases to Img before PDF to prevent vanishing graphs)
   function processStaffHistoricalArchive() {
     const file = document.getElementById('staffArchiveFileInput').files[0];
     if (!file) return alert("Select a previously downloaded CSV archive file.");
@@ -1360,7 +1362,6 @@
       skipEmptyLines: true,
       complete: function(results) {
         const raw = results.data;
-        // Filter to inquiries handled by this staff or show all if it was their personal export
         staffArchivedRecords = raw.filter(r => {
           const staffVal = r["Assigned Staff"] || r["assignedStaff"] || r["Staff Member"] || '';
           return !staffVal || staffVal === activeStaff || staffVal.includes(activeStaff) || raw.length < 500;
@@ -1377,7 +1378,7 @@
 
   function renderStaffArchiveDashboard(fileName) {
     document.getElementById('staffArchiveAnalyticsView').style.display = 'block';
-    document.getElementById('staffArchiveReportTitle').innerText = "Historical Appraisal Audit: " + fileName;
+    document.getElementById('staffArchiveReportTitle').innerText = "Historical Performance Audit: " + fileName;
     document.getElementById('archiveStaffTitleName').innerText = activeStaff;
     document.getElementById('archiveDossierDateStaff').innerText = "Generated: " + new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
 
@@ -1443,30 +1444,32 @@
       </div>
     `;
 
-    // Timeline Chart
+    // Ensure pristine canvas elements inside containers
+    document.getElementById('boxTimelineChart').innerHTML = '<canvas id="staffArchiveTimelineChart"></canvas>';
+    document.getElementById('boxCourseChart').innerHTML = '<canvas id="staffArchiveCourseChart"></canvas>';
+
+    // Render Timeline Chart (Animation turned OFF for instant raster readiness)
     const dates = Object.keys(timeline).sort();
-    if (staffArchiveTimelineChartInstance) staffArchiveTimelineChartInstance.destroy();
     staffArchiveTimelineChartInstance = new Chart(document.getElementById('staffArchiveTimelineChart'), {
       type: 'line',
       data: {
         labels: dates.length ? dates : ['No Date'],
         datasets: [{ label: 'Queries Handled', data: dates.map(d => timeline[d]), borderColor: '#2563eb', fill: true, backgroundColor: 'rgba(37,99,235,0.08)' }]
       },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      options: { animation: false, responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
 
-    // Course Chart
-    if (staffArchiveCourseChartInstance) staffArchiveCourseChartInstance.destroy();
+    // Render Doughnut Chart (Animation turned OFF)
     staffArchiveCourseChartInstance = new Chart(document.getElementById('staffArchiveCourseChart'), {
       type: 'doughnut',
       data: {
         labels: Object.keys(courseCounts),
         datasets: [{ data: Object.values(courseCounts), backgroundColor: ['#2563eb', '#7c3aed', '#16a34a', '#64748b'] }]
       },
-      options: { responsive: true, maintainAspectRatio: false }
+      options: { animation: false, responsive: true, maintainAspectRatio: false }
     });
 
-    // Render Keywords
+    // Keywords
     const kwEl = document.getElementById('staffArchiveKeywords');
     kwEl.innerHTML = '';
     const topKeywords = Object.entries(keywords).sort((a,b) => b[1] - a[1]).slice(0, 16);
@@ -1474,7 +1477,7 @@
       kwEl.innerHTML += `<span class="tag"><b>${w}</b> <span style="color:var(--accent); font-weight:800;">${count}</span></span>`;
     });
 
-    // Render Full Log
+    // Full Log Table
     const tbody = document.getElementById('staffArchiveTableBody');
     tbody.innerHTML = '';
     staffArchivedRecords.slice(0, 100).forEach(r => {
@@ -1491,17 +1494,66 @@
     });
   }
 
-  // Print Staff Archive Dossier using fixed 760px canvas
-  function printStaffArchiveDossierPDF() {
+  // Print Staff Archive Dossier: Converts canvases to static high-res images to guarantee the doughnut chart never drops out
+  async function printStaffArchiveDossierPDF() {
+    const boxTimeline = document.getElementById('boxTimelineChart');
+    const boxCourse = document.getElementById('boxCourseChart');
+
+    // 1. Snapshot charts to permanent base64 images
+    const timelineImgUrl = staffArchiveTimelineChartInstance.toBase64Image();
+    const courseImgUrl = staffArchiveCourseChartInstance.toBase64Image();
+
+    // 2. Temporarily swap canvas for image tag
+    boxTimeline.innerHTML = `<img src="${timelineImgUrl}" style="width:100%; height:190px; object-fit:contain;">`;
+    boxCourse.innerHTML = `<img src="${courseImgUrl}" style="width:100%; height:190px; object-fit:contain;">`;
+
     const el = document.getElementById('printableStaffArchiveCanvas');
     const opt = {
       margin: [10, 10, 10, 10],
-      filename: `SSD_Staff_Historical_Dossier_${activeStaff.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().substring(0, 10)}.pdf`,
+      filename: `SSD_Staff_Semester_Dossier_${activeStaff.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().substring(0, 10)}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true, width: 760 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
-    html2pdf().set(opt).from(el).save();
+
+    await html2pdf().set(opt).from(el).save();
+
+    // 3. Re-instantiate interactive charts for on-screen exploration
+    boxTimeline.innerHTML = '<canvas id="staffArchiveTimelineChart"></canvas>';
+    boxCourse.innerHTML = '<canvas id="staffArchiveCourseChart"></canvas>';
+
+    const dates = Object.keys(staffArchivedRecords.reduce((acc, r) => {
+      const d = r["Created Date"] || r.createdDate || '';
+      if (d) acc[d.substring(0,10)] = 1;
+      return acc;
+    }, {})).sort();
+
+    staffArchiveTimelineChartInstance = new Chart(document.getElementById('staffArchiveTimelineChart'), {
+      type: 'line',
+      data: {
+        labels: dates,
+        datasets: [{ label: 'Queries Handled', data: dates.map(() => 1), borderColor: '#2563eb', fill: true, backgroundColor: 'rgba(37,99,235,0.08)' }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+
+    let courseCounts = { "MBA": 0, "BCA": 0, "BBA LLB": 0, "Other": 0 };
+    staffArchivedRecords.forEach(r => {
+      const c = (r.Course || r.course || '').toUpperCase();
+      if (c.includes('MBA')) courseCounts["MBA"]++;
+      else if (c.includes('BCA')) courseCounts["BCA"]++;
+      else if (c.includes('BBA') || c.includes('LLB')) courseCounts["BBA LLB"]++;
+      else courseCounts["Other"]++;
+    });
+
+    staffArchiveCourseChartInstance = new Chart(document.getElementById('staffArchiveCourseChart'), {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(courseCounts),
+        datasets: [{ data: Object.values(courseCounts), backgroundColor: ['#2563eb', '#7c3aed', '#16a34a', '#64748b'] }]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
   }
 
   function exportMyStaffCSV() {
