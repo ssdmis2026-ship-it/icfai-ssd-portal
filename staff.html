@@ -78,9 +78,9 @@
     
     .kpi-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 16px;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
     .kpi-card {
       background: var(--bg);
@@ -92,7 +92,8 @@
       transition: transform 0.15s ease;
     }
     .kpi-card:hover { transform: translateY(-2px); }
-    .kpi-card .label { font-size: 12px; font-weight: 700; color: var(--subtext); }
+    .kpi-card:active { transform: translateY(0); }
+    .kpi-card .label { font-size: 11px; font-weight: 800; color: var(--subtext); }
     .kpi-card .val { font-size: 28px; font-weight: 800; margin-top: 6px; color: var(--primary); }
     .kpi-card .kpi-hint {
       position: absolute;
@@ -100,9 +101,60 @@
       font-size: 10px; font-weight: 700; color: #94a3b8;
     }
     
+    /* Layout with Side Activity Column */
+    .desk-split-layout {
+      display: flex;
+      gap: 24px;
+      width: 100%;
+      align-items: flex-start;
+    }
+    .desk-main-column {
+      flex: 1;
+      min-width: 0;
+    }
+    .desk-side-column {
+      width: 320px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    @media (max-width: 1050px) {
+      .desk-split-layout {
+        flex-direction: column;
+      }
+      .desk-side-column {
+        width: 100%;
+      }
+    }
+
+    .daily-stat-box {
+      background: var(--bg);
+      border-radius: 14px;
+      padding: 14px 16px;
+      box-shadow: inset 3px 3px 6px var(--dark-shadow), inset -3px -3px 6px var(--light-shadow);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+    .daily-stat-box:hover {
+      transform: scale(1.02);
+    }
+    .daily-stat-box .title {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #334155;
+    }
+    .daily-stat-box .count {
+      font-size: 18px;
+      font-weight: 900;
+    }
+
     .tab-bar {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       margin-bottom: 20px;
       background: var(--bg);
       padding: 6px;
@@ -112,11 +164,11 @@
     }
     .tab-item {
       flex: 1;
-      min-width: 150px;
-      padding: 12px 16px;
+      min-width: 140px;
+      padding: 12px 14px;
       text-align: center;
       font-weight: 700;
-      font-size: 14px;
+      font-size: 13.5px;
       color: var(--subtext);
       border-radius: 12px;
       cursor: pointer;
@@ -158,7 +210,6 @@
       border: 1px solid #cbd5e1;
     }
 
-    /* Staff 360 Timeline Styles */
     .timeline-container {
       position: relative;
       padding-left: 28px;
@@ -206,7 +257,6 @@
       animation: steadyGlowPulse 1.8s infinite ease-in-out;
       border: 1px solid rgba(220, 38, 38, 0.3);
     }
-    .counter-badge { padding: 3px 9px; border-radius: 20px; font-size: 12px; font-weight: 700; }
     
     .ticket-row {
       background: var(--bg);
@@ -340,6 +390,7 @@
 </head>
 <body>
 
+<!-- Motion Welcome Greeting Toast -->
 <div id="welcomeToastOverlay">
   <div class="welcome-card" id="welcomeToastBox">
     <div style="width:64px; height:64px; border-radius:50%; background:#dbeafe; display:flex; align-items:center; justify-content:center; margin: 0 auto 16px auto; box-shadow: inset 3px 3px 6px var(--dark-shadow), inset -3px -3px 6px var(--light-shadow);">
@@ -351,7 +402,7 @@
   </div>
 </div>
 
-<!-- 4-Month Staff Archival Notice Modal -->
+<!-- 4-Month Staff Archival Notice Modal (Guarded) -->
 <div id="staffCycleNoticeModal" class="modal-overlay">
   <div class="neu-card" style="max-width: 520px; width: 100%; text-align: center;">
     <div style="font-size:36px; margin-bottom:8px;">⏳</div>
@@ -410,7 +461,7 @@
 </div>
 
 <!-- Main Desk Interface -->
-<div id="deskView" style="display:none; max-width: 1100px; width:100%; margin: auto;">
+<div id="deskView" style="display:none; max-width: 1240px; width:100%; margin: auto;">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; flex-wrap:wrap; gap:12px;">
     <div style="display:flex; align-items:center; gap:16px;">
       <img id="staffHeaderLogo" src="logo.png" alt="ICFAI" style="max-height:48px; max-width:190px; object-fit:contain;" onerror="this.src='logo.png'">
@@ -454,8 +505,9 @@
     </button>
   </div>
 
-  <!-- SECTION 1: LIVE QUEUE WORKSPACE -->
+  <!-- SECTION 1: LIVE QUEUE WORKSPACE (With Side Daily Metrics Column) -->
   <div id="staffQueueSection">
+    
     <div class="kpi-row">
       <div class="kpi-card" onclick="openStaffDrilldown('Student', 'Assigned Student Queries')">
         <span class="kpi-hint">VIEW ↗</span>
@@ -474,26 +526,68 @@
       </div>
     </div>
 
-    <div style="display:flex; gap:12px; margin-bottom:15px;">
-      <button class="neu-btn" id="btnStudentSubTab" style="flex:1; justify-content:center;" onclick="switchSubQueue('student')">
-        Student Queue (<span id="badgeStudent">0</span>)
-      </button>
-      <button class="neu-btn" id="btnFacultySubTab" style="flex:1; justify-content:center;" onclick="switchSubQueue('faculty')">
-        Faculty Queue (<span id="badgeFaculty">0</span>)
-      </button>
-    </div>
+    <div class="desk-split-layout">
+      <!-- Main Queue Column -->
+      <div class="desk-main-column">
+        <div style="display:flex; gap:12px; margin-bottom:15px;">
+          <button class="neu-btn" id="btnStudentSubTab" style="flex:1; justify-content:center;" onclick="switchSubQueue('student')">
+            Student Queue (<span id="badgeStudent">0</span>)
+          </button>
+          <button class="neu-btn" id="btnFacultySubTab" style="flex:1; justify-content:center;" onclick="switchSubQueue('faculty')">
+            Faculty Queue (<span id="badgeFaculty">0</span>)
+          </button>
+        </div>
 
-    <div id="studentContainerBox" class="neu-card">
-      <h3 style="margin:0 0 14px 0; color:var(--primary);">Active Student Enquiries</h3>
-      <div id="studentListContainer">
-        <p style="color:#94a3b8; text-align:center; padding:30px 0;">No pending student enquiries.</p>
+        <div id="studentContainerBox" class="neu-card">
+          <h3 style="margin:0 0 14px 0; color:var(--primary);">Active Student Enquiries</h3>
+          <div id="studentListContainer">
+            <p style="color:#94a3b8; text-align:center; padding:30px 0;">No pending student enquiries.</p>
+          </div>
+        </div>
+
+        <div id="facultyContainerBox" class="neu-card" style="display:none;">
+          <h3 style="margin:0 0 14px 0; color:var(--crimson);">Faculty Direct Inquiries</h3>
+          <div id="facultyListContainer">
+            <p style="color:#94a3b8; text-align:center; padding:30px 0;">No pending faculty enquiries.</p>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <div id="facultyContainerBox" class="neu-card" style="display:none;">
-      <h3 style="margin:0 0 14px 0; color:var(--crimson);">Faculty Direct Inquiries</h3>
-      <div id="facultyListContainer">
-        <p style="color:#94a3b8; text-align:center; padding:30px 0;">No pending faculty enquiries.</p>
+      <!-- Side Daily Metrics Column (Pink Box in Screenshot) -->
+      <div class="desk-side-column">
+        <div class="neu-card" style="padding:18px; border-left: 4px solid var(--accent);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h4 style="margin:0; color:var(--primary); font-size:14px;">Today's Desk Overview</h4>
+            <span id="deskLiveDate" style="font-size:11px; font-weight:700; color:var(--subtext);">Oct 2026</span>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div class="daily-stat-box" onclick="openStaffDrilldown('TODAY_STUDENTS', 'Today\'s Student Queries')">
+              <span class="title">Students Today</span>
+              <span class="count" id="statTodayStudents" style="color:var(--accent);">0</span>
+            </div>
+
+            <div class="daily-stat-box" onclick="openStaffDrilldown('TODAY_FACULTY', 'Today\'s Faculty Queries')">
+              <span class="title">Faculty Today</span>
+              <span class="count" id="statTodayFaculty" style="color:var(--crimson);">0</span>
+            </div>
+
+            <div class="daily-stat-box" onclick="openStaffDrilldown('TODAY_RESOLVED', 'Today\'s Resolved Inquiries')">
+              <span class="title">Resolved Today</span>
+              <span class="count" id="statTodayResolved" style="color:var(--green);">0</span>
+            </div>
+
+            <div class="daily-stat-box" onclick="openStaffDrilldown('TODAY_OPEN', 'Today\'s Pending Inquiries')">
+              <span class="title">Kept Open Today</span>
+              <span class="count" id="statTodayOpen" style="color:var(--amber);">0</span>
+            </div>
+
+            <div class="daily-stat-box" style="border: 1px solid #cbd5e1;" onclick="openStaffDrilldown('ALL_TIME', 'Master Inquiries (All-Time Assigned)')">
+              <span class="title">Master Influx Total</span>
+              <span class="count" id="statMasterTotal" style="color:var(--primary);">0</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -509,7 +603,6 @@
         <button class="neu-btn" style="color:var(--green); font-size:13px; padding:8px 16px;" onclick="printLiveStaffDossierPDF()">Download Performance Dossier (PDF)</button>
       </div>
 
-      <!-- Printable Area with Fixed A4 Print Geometry -->
       <div class="print-document-canvas" id="liveStaffPrintWrapper">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #1e3a8a; padding-bottom:12px; margin-bottom:20px;">
           <div>
@@ -595,7 +688,7 @@
     </div>
   </div>
 
-  <!-- SECTION 4: HISTORICAL ARCHIVE ANALYZER FOR STAFF (WITH HIGH-DPI CHARTS) -->
+  <!-- SECTION 4: HISTORICAL ARCHIVE ANALYZER FOR STAFF -->
   <div id="staffArchiveSection" style="display:none;">
     <div class="neu-card">
       <h3 style="color:var(--primary); margin-top:0;">Historical 4-Month Archive Deep-Dive Analyzer</h3>
@@ -614,7 +707,6 @@
           <button class="neu-btn" style="color:var(--green); font-size:13px; padding:8px 16px;" onclick="printStaffArchiveDossierPDF()">Download Performance Dossier (PDF)</button>
         </div>
 
-        <!-- Printable Document Canvas for Staff Archive -->
         <div id="printableStaffArchiveCanvas" class="print-document-canvas">
           <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #1e3a8a; padding-bottom:12px; margin-bottom:20px;">
             <div>
@@ -630,7 +722,7 @@
           <!-- KPI Cards -->
           <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:24px;" id="staffArchiveKpis"></div>
 
-          <!-- Charts Row: Converted to Vector/Image Snapshots to Avoid Canvas Disappearance in PDF -->
+          <!-- Charts Row: Snapshot Container -->
           <div class="page-break-avoid" style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:24px;">
             <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px; border-radius:10px;">
               <div style="font-size:12px; font-weight:700; color:#1e3a8a; margin-bottom:8px;">Inquiry Timeline by Date</div>
@@ -828,7 +920,7 @@
     }
   });
 
-  // 4-Month Cycle Checker (Initialized properly)
+  // 4-Month Cycle Checker
   db.collection('settings').doc('systemArchive').onSnapshot(doc => {
     if (doc.exists && doc.data().lastArchivedTimestamp) {
       const last = doc.data().lastArchivedTimestamp;
@@ -871,7 +963,8 @@
     sel.innerHTML = '<option value="">-- Choose Profile --</option>';
     profiles.forEach(p => {
       const opt = document.createElement('option');
-      opt.value = p; opt.innerText = p;
+      opt.value = p;
+      opt.innerText = p;
       sel.appendChild(opt);
     });
     if (currentVal && profiles.includes(currentVal)) {
@@ -994,6 +1087,9 @@
     document.getElementById('loginBox').style.display = 'none';
     document.getElementById('deskView').style.display = 'block';
     document.getElementById('staffHeader').innerText = "Workstation: " + activeStaff;
+
+    const todayPretty = new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    document.getElementById('deskLiveDate').innerText = todayPretty;
 
     db.collection('settings').doc('staffAvailability').get().then(doc => {
       const state = (doc.exists && doc.data() && doc.data()[activeStaff]) || 'Available';
@@ -1185,6 +1281,13 @@
       currentStaffTickets = [];
       allMasterTickets = [];
 
+      const todayStr = new Date().toISOString().substring(0, 10);
+      let todayStudents = 0;
+      let todayFaculty = 0;
+      let todayResolved = 0;
+      let todayOpen = 0;
+      let masterTotal = 0;
+
       snapshot.forEach(doc => {
         const d = doc.data();
         const id = doc.id;
@@ -1193,6 +1296,18 @@
         
         const isAssigned = (d.assignedStaff === activeStaff || d.assignedStaff === 'No Staff Available');
         const isOpen = (d.status === 'Open' || d.status === 'Open - Pending Action');
+        const isToday = d.createdDate && d.createdDate.startsWith(todayStr);
+
+        if (isAssigned) {
+          masterTotal++;
+          if (isToday) {
+            if (d.type === 'Faculty') todayFaculty++;
+            else todayStudents++;
+
+            if (d.status === 'Resolved') todayResolved++;
+            else todayOpen++;
+          }
+        }
 
         if (isAssigned && isOpen) {
           currentStaffTickets.push(d);
@@ -1212,11 +1327,19 @@
         return tB - tA;
       });
 
+      // Update Top KPIs
       document.getElementById('studentCount').innerText = stuCount;
       document.getElementById('facultyCount').innerText = facCount;
       document.getElementById('totalCount').innerText = stuCount + facCount;
       document.getElementById('badgeStudent').innerText = stuCount;
       document.getElementById('badgeFaculty').innerText = facCount;
+
+      // Update Side Overview
+      document.getElementById('statTodayStudents').innerText = todayStudents;
+      document.getElementById('statTodayFaculty').innerText = todayFaculty;
+      document.getElementById('statTodayResolved').innerText = todayResolved;
+      document.getElementById('statTodayOpen').innerText = todayOpen;
+      document.getElementById('statMasterTotal').innerText = masterTotal;
 
       const facKpiCard = document.getElementById('facKpiCard');
       if (facCount > 0) {
@@ -1306,7 +1429,30 @@
     currentDrilldownCategory = type;
     document.getElementById('staffDrilldownTitle').innerText = title;
     document.getElementById('staffDrilldownDateFilter').value = '';
-    renderStaffDrilldownRows(currentStaffTickets);
+
+    const todayStr = new Date().toISOString().substring(0, 10);
+    const myAll = allMasterTickets.filter(r => r.assignedStaff === activeStaff || r.resolvedBy === activeStaff);
+
+    let filtered = [];
+    if (type === 'Student') {
+      filtered = currentStaffTickets.filter(r => r.type !== 'Faculty');
+    } else if (type === 'Faculty') {
+      filtered = currentStaffTickets.filter(r => r.type === 'Faculty');
+    } else if (type === 'ALL') {
+      filtered = [...currentStaffTickets];
+    } else if (type === 'TODAY_STUDENTS') {
+      filtered = myAll.filter(r => r.type !== 'Faculty' && r.createdDate && r.createdDate.startsWith(todayStr));
+    } else if (type === 'TODAY_FACULTY') {
+      filtered = myAll.filter(r => r.type === 'Faculty' && r.createdDate && r.createdDate.startsWith(todayStr));
+    } else if (type === 'TODAY_RESOLVED') {
+      filtered = myAll.filter(r => r.status === 'Resolved' && r.createdDate && r.createdDate.startsWith(todayStr));
+    } else if (type === 'TODAY_OPEN') {
+      filtered = myAll.filter(r => r.status !== 'Resolved' && r.createdDate && r.createdDate.startsWith(todayStr));
+    } else if (type === 'ALL_TIME') {
+      filtered = [...myAll];
+    }
+
+    renderStaffDrilldownRows(filtered);
     document.getElementById('staffDrilldownModal').style.display = 'flex';
   }
 
@@ -1314,27 +1460,20 @@
     const tbody = document.getElementById('staffDrilldownBody');
     tbody.innerHTML = '';
 
-    let filtered = ticketList;
-    if (currentDrilldownCategory === 'Student') {
-      filtered = ticketList.filter(r => r.type !== 'Faculty');
-    } else if (currentDrilldownCategory === 'Faculty') {
-      filtered = ticketList.filter(r => r.type === 'Faculty');
-    }
-
-    filtered.sort((a, b) => {
+    ticketList.sort((a, b) => {
       const tA = a.startTimestamp || new Date(a.createdDate).getTime() || 0;
       const tB = b.startTimestamp || new Date(b.createdDate).getTime() || 0;
       return tB - tA;
     });
 
-    document.getElementById('staffDrilldownCountBadge').innerText = `Displaying ${filtered.length} entries (Sorted Newest to Oldest)`;
+    document.getElementById('staffDrilldownCountBadge').innerText = `Displaying ${ticketList.length} entries (Sorted Newest to Oldest)`;
 
-    if (!filtered.length) {
+    if (!ticketList.length) {
       tbody.innerHTML = '<tr><td colspan="5" style="padding:20px; text-align:center; color:#94a3b8;">No entries found.</td></tr>';
       return;
     }
 
-    filtered.forEach(r => {
+    ticketList.forEach(r => {
       const dateObj = r.createdDate ? new Date(r.createdDate) : new Date();
       const formattedDate = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
       const formattedTime = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -1356,20 +1495,18 @@
   function applyStaffDrilldownDateFilter() {
     const selectedDate = document.getElementById('staffDrilldownDateFilter').value;
     if (!selectedDate) {
-      renderStaffDrilldownRows(currentStaffTickets);
+      openStaffDrilldown(currentDrilldownCategory, document.getElementById('staffDrilldownTitle').innerText);
       return;
     }
-    const filtered = currentStaffTickets.filter(r => {
-      if (!r.createdDate) return false;
-      return r.createdDate.substring(0, 10) === selectedDate;
-    });
+    const myAll = allMasterTickets.filter(r => r.assignedStaff === activeStaff || r.resolvedBy === activeStaff);
+    const filtered = myAll.filter(r => r.createdDate && r.createdDate.substring(0, 10) === selectedDate);
     renderStaffDrilldownRows(filtered);
     document.getElementById('staffDrilldownCountBadge').innerText = `Showing ${filtered.length} entries for ${selectedDate}`;
   }
 
   function clearStaffDrilldownDateFilter() {
     document.getElementById('staffDrilldownDateFilter').value = '';
-    renderStaffDrilldownRows(currentStaffTickets);
+    openStaffDrilldown(currentDrilldownCategory, document.getElementById('staffDrilldownTitle').innerText);
   }
 
   function closeStaffDrilldown() {
@@ -1381,7 +1518,6 @@
     const searchVal = document.getElementById('staffSearch360Enroll').value.trim().toUpperCase();
     if (!searchVal) return alert("Please enter an enrollment number.");
 
-    // Filter enquiries specifically handled by this staff
     const myDeskVisits = allMasterTickets.filter(r => 
       (r.enrollment || '').toUpperCase() === searchVal && 
       (r.assignedStaff === activeStaff || r.resolvedBy === activeStaff)
@@ -1596,7 +1732,6 @@
     document.getElementById('boxTimelineChart').innerHTML = '<canvas id="staffArchiveTimelineChart"></canvas>';
     document.getElementById('boxCourseChart').innerHTML = '<canvas id="staffArchiveCourseChart"></canvas>';
 
-    // Render Timeline Chart (Instant Raster Mode)
     const dates = Object.keys(timeline).sort();
     staffArchiveTimelineChartInstance = new Chart(document.getElementById('staffArchiveTimelineChart'), {
       type: 'line',
@@ -1607,7 +1742,6 @@
       options: { animation: false, responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
 
-    // Render Doughnut Chart (Instant Raster Mode)
     staffArchiveCourseChartInstance = new Chart(document.getElementById('staffArchiveCourseChart'), {
       type: 'doughnut',
       data: {
@@ -1617,7 +1751,6 @@
       options: { animation: false, responsive: true, maintainAspectRatio: false }
     });
 
-    // Keywords
     const kwEl = document.getElementById('staffArchiveKeywords');
     kwEl.innerHTML = '';
     const topKeywords = Object.entries(keywords).sort((a,b) => b[1] - a[1]).slice(0, 16);
@@ -1625,7 +1758,6 @@
       kwEl.innerHTML += `<span class="tag"><b>${w}</b> <span style="color:var(--accent); font-weight:800;">${count}</span></span>`;
     });
 
-    // Full Log Table
     const tbody = document.getElementById('staffArchiveTableBody');
     tbody.innerHTML = '';
     staffArchivedRecords.slice(0, 100).forEach(r => {
@@ -1642,7 +1774,7 @@
     });
   }
 
-  // Converts canvases to raster image snapshots so charts do not drop out in the PDF
+  // Guaranteed High-Res Image Snapshot Before PDF Compile
   async function printStaffArchiveDossierPDF() {
     const boxTimeline = document.getElementById('boxTimelineChart');
     const boxCourse = document.getElementById('boxCourseChart');
@@ -1664,7 +1796,6 @@
 
     await html2pdf().set(opt).from(el).save();
 
-    // Reconstruct interactive Chart.js canvases after download
     boxTimeline.innerHTML = '<canvas id="staffArchiveTimelineChart"></canvas>';
     boxCourse.innerHTML = '<canvas id="staffArchiveCourseChart"></canvas>';
 
