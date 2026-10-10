@@ -93,7 +93,7 @@
       background: var(--bg);
       border-radius: 20px;
       padding: 18px 20px;
-      box-shadow: 8px 8px 18px var(--shadow-dark), -8px -8px 18px var(--shadow-light);
+      box-shadow: 8px 8px 18px var(--shadow-dark), -8px -8px 18px var(--light-shadow);
       height: fit-content;
     }
     
@@ -123,10 +123,11 @@
       padding: 10px;
       border-radius: 11px;
       font-weight: 700;
-      font-size: 13.5px;
+      font-size: 13px;
       color: #64748b;
       cursor: pointer;
       transition: all 0.2s ease;
+      text-align: center;
     }
     .tab-btn.active {
       background: var(--bg);
@@ -315,7 +316,7 @@
     .gate-box {
       background: var(--bg);
       border-radius: 24px;
-      box-shadow: 12px 12px 24px var(--shadow-dark), -12px -12px 24px var(--shadow-light);
+      box-shadow: 12px 12px 24px var(--shadow-dark), -12px -12px 24px var(--light-shadow);
       padding: 35px 30px;
       max-width: 420px;
       width: 100%;
@@ -350,7 +351,7 @@
 
 <div class="layout-wrapper" id="mainDeskContent" style="display:none;">
   
-  <!-- LEFT COLUMN: Availability Status Roster + Left Priority Announcements -->
+  <!-- LEFT COLUMN: Availability Status Roster + Priority Staff Announcements -->
   <div class="side-column-left">
     <div class="neu-widget" style="border-left: 5px solid var(--accent);">
       <h4 style="margin:0 0 4px 0; color:var(--primary); font-size:15px;">Availability Status</h4>
@@ -373,10 +374,10 @@
       <div class="tab-container">
         <button class="tab-btn active" id="tabStudent" type="button" onclick="switchTab('student')">Student Enquiry</button>
         <button class="tab-btn" id="tabFaculty" type="button" onclick="switchTab('faculty')">Faculty Enquiry</button>
-        <button class="tab-btn" id="tabGeneral" type="button" onclick="switchTab('general')">General Enquiry</button>
+        <button class="tab-btn" id="tabGeneral" type="button" onclick="switchTab('general')">Admission Enquiry / General Enquiry</button>
       </div>
 
-      <!-- 1. Student Form -->
+      <!-- 1. Student Form (Filtered dynamically based on Program/Course) -->
       <form id="studentForm">
         <label style="font-size:12.5px; font-weight:600;">Enrollment Number</label>
         <input type="text" id="stuEnroll" class="neu-input" placeholder="e.g. 26BSOCBL0001" oninput="handleStudentEnrollInput()" required>
@@ -386,8 +387,8 @@
 
         <div class="grid-3">
           <div>
-            <label style="font-size:12.5px; font-weight:600;">Course</label>
-            <input type="text" id="stuCourse" class="neu-input" placeholder="e.g. MBA, BCA">
+            <label style="font-size:12.5px; font-weight:600;">Course / Degree</label>
+            <input type="text" id="stuCourse" class="neu-input" placeholder="e.g. MBA, BCA, BBA" oninput="refreshStaffDropdownForCourse()">
           </div>
           <div>
             <label style="font-size:12.5px; font-weight:600;">Section</label>
@@ -431,7 +432,7 @@
         <button type="submit" id="facSubmitBtn" class="neu-btn" style="margin-top:4px;">Submit Faculty Enquiry</button>
       </form>
 
-      <!-- 3. General Form -->
+      <!-- 3. Admission / General Form -->
       <form id="generalForm" style="display:none;">
         <label style="font-size:12.5px; font-weight:600;">Visitor / Inquirer Full Name</label>
         <input type="text" id="genName" class="neu-input" placeholder="Enter your full name" required>
@@ -444,8 +445,9 @@
           <div>
             <label style="font-size:12.5px; font-weight:600;">Category</label>
             <select id="genCategory" class="neu-select">
+              <option value="Admission Enquiry">Admission Enquiry</option>
               <option value="General Information">General Information</option>
-              <option value="Admissions / Campus Visit">Admissions / Campus Visit</option>
+              <option value="Campus Visit / Tour">Campus Visit / Tour</option>
               <option value="Parent Meeting">Parent Meeting</option>
               <option value="Administrative Assistance">Administrative Assistance</option>
               <option value="Other">Other</option>
@@ -463,7 +465,7 @@
         <label style="font-size:12.5px; font-weight:600;">Brief Enquiry Description</label>
         <textarea id="genQuery" rows="3" class="neu-textarea" placeholder="State enquiry details..." required></textarea>
 
-        <button type="submit" id="genSubmitBtn" class="neu-btn" style="margin-top:4px;">Submit General Enquiry</button>
+        <button type="submit" id="genSubmitBtn" class="neu-btn" style="margin-top:4px;">Submit Enquiry</button>
       </form>
     </div>
   </div>
@@ -471,7 +473,6 @@
   <!-- RIGHT COLUMN: Centered-Badge Multi-Stream Announcements -->
   <div class="side-column-right" id="announcementsColumn">
     
-    <!-- 1. Common Announcement Card -->
     <div id="cardAnnCommon" class="announcement-card ann-common" style="display:none;">
       <div class="ann-badge badge-common">General Announcement</div>
       <div class="ann-title" id="annTitleCommon">Announcement</div>
@@ -480,7 +481,6 @@
       </div>
     </div>
 
-    <!-- 2. UG Announcement Card -->
     <div id="cardAnnUG" class="announcement-card ann-ug" style="display:none;">
       <div class="ann-badge badge-ug">UG Announcement (BCA / BBA LLB)</div>
       <div class="ann-title" id="annTitleUG">UG Notice</div>
@@ -489,7 +489,6 @@
       </div>
     </div>
 
-    <!-- 3. MBA Announcement Card -->
     <div id="cardAnnMBA" class="announcement-card ann-mba" style="display:none;">
       <div class="ann-badge badge-mba">MBA Announcement</div>
       <div class="ann-title" id="annTitleMBA">MBA Notice</div>
@@ -498,7 +497,6 @@
       </div>
     </div>
 
-    <!-- Right Side Spillover for Staff Announcements -->
     <div id="rightStaffAnnouncements" style="display:flex; flex-direction:column; gap:14px;"></div>
 
   </div>
@@ -525,6 +523,7 @@
   let studentMap = {};
   let facultyList = [];
   let staffList = ["Person 1", "Person 2", "Person 3", "Person 4", "Person 5"];
+  let staffRoutingMap = {};
   let staffStatusMap = {};
   let currentActiveTab = 'student';
   let broadcastState = {};
@@ -608,20 +607,13 @@
 
   db.collection('settings').doc('staffList').onSnapshot(doc => {
     staffList = (doc.exists && doc.data().names) ? doc.data().names : ["Person 1", "Person 2", "Person 3", "Person 4", "Person 5"];
-    document.querySelectorAll('.staffDropdown').forEach(sel => {
-      const prev = sel.value;
-      sel.innerHTML = '<option value="">-- Choose Staff Member --</option>';
-      staffList.forEach(p => {
-        const opt = document.createElement('option');
-        opt.value = p; opt.innerText = p;
-        sel.appendChild(opt);
-      });
-      const noStaff = document.createElement('option');
-      noStaff.value = "No Staff Available"; noStaff.innerText = "No Staff Available";
-      sel.appendChild(noStaff);
-      if (prev) sel.value = prev;
-    });
+    repopulateDropdowns();
     renderDutyRoster();
+  });
+
+  db.collection('settings').doc('staffRouting').onSnapshot(doc => {
+    staffRoutingMap = doc.exists ? (doc.data() || {}) : {};
+    repopulateDropdowns();
   });
 
   db.collection('settings').doc('staffAvailability').onSnapshot(doc => {
@@ -667,6 +659,64 @@
         </div>
       `;
     });
+  }
+
+  // Program-Specific Staff Filter Algorithm
+  function repopulateDropdowns() {
+    // 1. Populate Faculty Dropdown (Faculty or Open All Desks)
+    populateSpecificDropdown('facStaff', (staffName) => {
+      const route = staffRoutingMap[staffName] || 'ALL';
+      return route === 'ALL' || route === 'FACULTY_ONLY';
+    });
+
+    // 2. Populate Admission / General Dropdown (All Desks)
+    populateSpecificDropdown('genStaff', () => true);
+
+    // 3. Populate Student Dropdown (Dynamically Filtered)
+    refreshStaffDropdownForCourse();
+  }
+
+  function populateSpecificDropdown(dropdownId, filterFn) {
+    const sel = document.getElementById(dropdownId);
+    if (!sel) return;
+    const currentVal = sel.value;
+    sel.innerHTML = '<option value="">-- Choose Staff Member --</option>';
+
+    staffList.forEach(p => {
+      if (filterFn(p)) {
+        const opt = document.createElement('option');
+        opt.value = p;
+        opt.innerText = p;
+        sel.appendChild(opt);
+      }
+    });
+
+    const noStaff = document.createElement('option');
+    noStaff.value = "No Staff Available";
+    noStaff.innerText = "No Staff Available";
+    sel.appendChild(noStaff);
+
+    if (currentVal && Array.from(sel.options).some(o => o.value === currentVal)) {
+      sel.value = currentVal;
+    }
+  }
+
+  function refreshStaffDropdownForCourse() {
+    const courseVal = (document.getElementById('stuCourse').value || '').trim().toUpperCase();
+    const isUG = courseVal.includes('BCA') || courseVal.includes('BBA') || courseVal.includes('LLB') || courseVal.includes('BA') || courseVal.includes('B.COM') || courseVal.includes('UG');
+    const isPG = courseVal.includes('MBA') || courseVal.includes('PG') || courseVal.includes('M.COM') || courseVal.includes('PHD');
+
+    populateSpecificDropdown('stuStaff', (staffName) => {
+      const route = staffRoutingMap[staffName] || 'ALL';
+      if (route === 'ALL') return true;
+      if (route === 'FACULTY_ONLY') return false; // Hide faculty-only lines from students
+      if (isUG && route === 'UG') return true;
+      if (isPG && route === 'PG') return true;
+      if (!isUG && !isPG) return true; // Show all if course not yet specified
+      return false;
+    });
+
+    checkStaffStatus('stuStaff', 'stuStatusAlert');
   }
 
   db.collection('settings').doc('broadcast').onSnapshot(doc => {
@@ -806,6 +856,7 @@
     }
   }
 
+  // Clear inputs immediately when enrollment number is backspaced / emptied
   function handleStudentEnrollInput() {
     const v = document.getElementById('stuEnroll').value.trim().toUpperCase();
     if (!v) {
@@ -813,6 +864,7 @@
       document.getElementById('stuCourse').value = '';
       document.getElementById('stuSec').value = '';
       document.getElementById('stuSem').value = '';
+      refreshStaffDropdownForCourse();
       return;
     }
 
@@ -822,6 +874,7 @@
       const secVal = (studentMap[v].sec || '').replace(/nan|n\/a|na/gi, '').trim();
       document.getElementById('stuSec').value = secVal;
       document.getElementById('stuSem').value = studentMap[v].sem || '';
+      refreshStaffDropdownForCourse();
     }
   }
 
@@ -884,6 +937,7 @@
       alert(`Thank you, ${name}. Your enquiry has been registered with ${staff}.`);
       document.getElementById('studentForm').reset();
       document.getElementById('stuStatusAlert').style.display = 'none';
+      refreshStaffDropdownForCourse();
     } catch (err) {
       alert("Submission error: " + err.message);
     } finally {
@@ -968,14 +1022,14 @@
         startTimestamp: Date.now()
       });
 
-      alert(`Thank you, ${genName}. Your enquiry has been submitted to ${staff}.`);
+      alert(`Thank you, ${genName}. Your enquiry has been registered with ${staff}.`);
       document.getElementById('generalForm').reset();
       document.getElementById('genStatusAlert').style.display = 'none';
     } catch (err) {
       alert("Submission error: " + err.message);
     } finally {
       btn.disabled = false;
-      btn.innerText = "Submit General Enquiry";
+      btn.innerText = "Submit Enquiry";
     }
   });
 </script>
