@@ -149,22 +149,24 @@
       gap: 6px;
     }
     
-    /* Program Routing Card Styles in Settings */
+    /* Program & Semester Routing Card */
     .staff-routing-card {
       background: var(--bg);
-      padding: 12px 16px;
-      border-radius: 14px;
+      padding: 14px 16px;
+      border-radius: 16px;
       display: inline-flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
       box-shadow: 4px 4px 10px var(--dark-shadow), -4px -4px 10px var(--light-shadow);
       margin: 8px;
-      min-width: 310px;
+      min-width: 320px;
+      flex: 1 1 320px;
+      max-width: 380px;
     }
     .chip-btn {
       cursor: pointer;
       font-weight: 700;
-      padding: 2px 6px;
+      padding: 3px 7px;
       border-radius: 6px;
       background: #ffffff;
       border: 1px solid #cbd5e1;
@@ -233,7 +235,7 @@
       box-shadow: 0 0 0 2px var(--accent);
     }
 
-    /* Enhanced Word-Processing Editor Toolbar */
+    /* Word-Processing Editor Toolbar */
     .editor-toolbar {
       display: flex;
       flex-wrap: wrap;
@@ -557,13 +559,21 @@
       </div>
     </div>
 
+    <!-- Deduplicated & Normalized Staff Resolution Breakdown Table -->
     <div class="neu-card">
-      <h3 style="color:var(--primary); margin-top:0;">Staff Resolution & Handling Speed (TAT) Breakdown</h3>
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+        <div>
+          <h3 style="color:var(--primary); margin:0;">Staff Resolution & Handling Speed (TAT) Breakdown</h3>
+          <p style="font-size:13px; color:var(--subtext); margin:3px 0 0 0;">Unified metrics cleanly consolidated under official active profiles (no split duplicate rows).</p>
+        </div>
+        <button class="neu-btn" style="color:var(--accent); font-size:12px; padding:6px 14px;" onclick="harmonizeHistoricalStaffNames()">Harmonize Historical Staff Names in Database</button>
+      </div>
+
       <div style="overflow-x:auto;">
         <table style="width:100%; border-collapse:collapse; font-size:14px; text-align:left;">
           <thead>
             <tr style="border-bottom: 2px solid #cbd5e1; color:var(--subtext);">
-              <th style="padding:10px;">Staff Member</th>
+              <th style="padding:10px;">Staff Member Profile</th>
               <th style="padding:10px;">Total Assigned</th>
               <th style="padding:10px;">Resolved</th>
               <th style="padding:10px;">Pending</th>
@@ -811,7 +821,7 @@
     <div class="neu-card">
       <h3 style="color:var(--primary); margin-top:0;">Front Desk Multi-Stream Announcements</h3>
       <p style="font-size:13px; color:var(--subtext); margin-bottom:18px;">
-        Format rich-text announcements with alignment, fonts, sizes, formatting, colors, and bullet lists[cite: 24].
+        Format rich-text announcements with alignment, fonts, sizes, formatting, colors, and bullet lists.
       </p>
 
       <div class="grid-3">
@@ -1017,13 +1027,13 @@
       </button>
     </div>
 
-    <!-- SSD Staff Profile Management & Program Routing Allocation -->
+    <!-- SSD Staff Profile Management & Program / Semester Routing Allocation -->
     <div class="neu-card">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
         <div>
-          <h3 style="color:var(--primary); margin:0;">SSD Staff Profile & Program Allocation Management</h3>
+          <h3 style="color:var(--primary); margin:0;">SSD Staff Profile & Program/Semester Allocation Management</h3>
           <p style="font-size:13px; color:var(--subtext); margin:4px 0 0 0;">
-            Assign each staff member specifically to UG, PG/MBA, or All Desks. The front desk automatically restricts dropdowns based on student cohorts.
+            Assign each staff member specifically to Program Cohorts (UG vs. PG) AND Specific Semesters. The front desk automatically filters selections based on student data.
           </p>
         </div>
       </div>
@@ -1271,7 +1281,7 @@
     reader.readAsDataURL(file);
   }
 
-  // 4-Month Archival Check (Corrected Initialization)
+  // 4-Month Archival Check (Safe Initialization from Today)
   db.collection('settings').doc('systemArchive').onSnapshot(doc => {
     if (!doc.exists || !doc.data() || !doc.data().lastArchivedTimestamp) {
       db.collection('settings').doc('systemArchive').set({
@@ -1479,6 +1489,50 @@
     renderFacultyTable();
   }).catch(() => {});
 
+  // Canonical Staff Normalizer (Merges legacy renamed profiles to active canonical titles)
+  function getCanonicalStaffName(rawName) {
+    if (!rawName || rawName === "No Staff Available") return "No Staff Available";
+    const cleaned = rawName.trim();
+    if (currentStaffList.includes(cleaned)) return cleaned;
+
+    const lower = cleaned.toLowerCase();
+    for (let c of currentStaffList) {
+      const cLower = c.toLowerCase();
+      if (cLower.includes(lower) || lower.includes(cLower)) return c;
+      if (lower.includes("sudha") && cLower.includes("sudha")) return c;
+      if (lower.includes("chandrakala") && cLower.includes("chandrakala")) return c;
+      if (lower.includes("usha") && cLower.includes("usha")) return c;
+      if ((lower.includes("suresh") || lower.includes("sb")) && (cLower.includes("sb") || cLower.includes("suresh"))) return c;
+      if (lower.includes("testing") && cLower.includes("testing")) return c;
+    }
+    return cleaned;
+  }
+
+  // Database Cleaner: Harmonizes all legacy ticket strings to the new full names
+  async function harmonizeHistoricalStaffNames() {
+    if (!confirm("This will harmonize and update all older inquiries in the database to use current active profile names. Continue?")) return;
+    
+    let updatedCount = 0;
+    const batch = db.batch();
+
+    masterRecords.forEach(r => {
+      const raw = r.assignedStaff;
+      const canonical = getCanonicalStaffName(raw);
+      if (raw && raw !== canonical && r.docId) {
+        batch.update(db.collection('enquiries').doc(r.docId), { assignedStaff: canonical });
+        updatedCount++;
+      }
+    });
+
+    if (updatedCount === 0) {
+      alert("All records in the database are already harmonized with active profile names.");
+      return;
+    }
+
+    await batch.commit();
+    alert(`Successfully harmonized ${updatedCount} historical inquiries to active profile names.`);
+  }
+
   db.collection('enquiries').onSnapshot(snapshot => {
     masterRecords = [];
     let resolved = 0;
@@ -1491,6 +1545,7 @@
     let resolvedWithTATCount = 0;
     let totalOpenWaitMinutes = 0;
 
+    // Staff stats dictionary strictly anchored on current active profiles
     let staffStats = {};
     currentStaffList.forEach(name => { staffStats[name] = { assigned: 0, resolved: 0, totalTAT: 0 }; });
     staffStats["No Staff Available"] = { assigned: 0, resolved: 0, totalTAT: 0 };
@@ -1558,7 +1613,10 @@
         heatmapMatrix[cKey].total++;
       }
 
-      const s = d.assignedStaff || "No Staff Available";
+      // Consolidate legacy names into active canonical profiles
+      const rawStaff = d.assignedStaff || "No Staff Available";
+      const s = getCanonicalStaffName(rawStaff);
+
       if (!staffStats[s]) staffStats[s] = { assigned: 0, resolved: 0, totalTAT: 0 };
       staffStats[s].assigned++;
       if (d.status === 'Resolved') {
@@ -1722,7 +1780,9 @@
         if (hourly[slot] !== undefined) hourly[slot]++;
       }
 
-      const s = r["Assigned Staff"] || r.assignedStaff || 'Unassigned';
+      const rawS = r["Assigned Staff"] || r.assignedStaff || 'Unassigned';
+      const s = getCanonicalStaffName(rawS);
+
       if (!staffSummary[s]) staffSummary[s] = { assigned: 0, resolved: 0, totalTAT: 0, tatCount: 0 };
       staffSummary[s].assigned++;
       if (isRes) {
@@ -1817,7 +1877,7 @@
         <tr style="border-bottom:1px solid #e2e8f0;">
           <td style="padding:6px; font-weight:600;">${r.Name || r.name || 'N/A'}</td>
           <td style="padding:6px;">${r.Course || r.course || 'General'}</td>
-          <td style="padding:6px;">${r["Assigned Staff"] || r.assignedStaff || 'Unassigned'}</td>
+          <td style="padding:6px;">${getCanonicalStaffName(r["Assigned Staff"] || r.assignedStaff)}</td>
           <td style="padding:6px; max-width:230px;">${r.Query || r.query || ''}</td>
           <td style="padding:6px; font-weight:700; color:${(r.Status || '').includes('Resolved') ? 'green' : 'red'};">${r.Status || r.status || 'Resolved'}</td>
           <td style="padding:6px; color:#166534;">${r["Solution Remarks"] || r.solution || 'Resolved'}</td>
@@ -1933,7 +1993,7 @@
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
               <div>
                 <span style="font-size:12px; font-weight:800; color:var(--primary); background:#e2e8f0; padding:2px 8px; border-radius:6px;">Visit #${visits.length - idx}</span>
-                <span style="font-size:13px; font-weight:700; margin-left:6px;">Desk: <b>${v.assignedStaff || 'Unassigned'}</b></span>
+                <span style="font-size:13px; font-weight:700; margin-left:6px;">Desk: <b>${getCanonicalStaffName(v.assignedStaff)}</b></span>
               </div>
               <div style="display:flex; align-items:center; gap:8px;">
                 <span style="font-size:12px; font-weight:700; color:${isResolved ? 'var(--green)' : 'var(--crimson)'};">${v.status}</span>
@@ -2026,7 +2086,7 @@
           <td style="padding:10px;"><b>${r.name || 'N/A'}</b><div style="font-size:11px; color:#64748b;">${r.type}</div></td>
           <td style="padding:10px;"><b>${course}</b></td>
           <td style="padding:10px;">${contactOrEnroll}</td>
-          <td style="padding:10px;">${r.assignedStaff || 'Unassigned'}</td>
+          <td style="padding:10px;">${getCanonicalStaffName(r.assignedStaff)}</td>
           <td style="padding:10px; font-weight:700; ${badgeColor}">${r.status}</td>
           <td style="padding:10px;">${timeMetric}</td>
           <td style="padding:10px;"><b>${formattedDate}</b><div style="font-size:11px; color:#64748b;">${formattedTime}</div></td>
@@ -2067,7 +2127,8 @@
 
     const openEnquiries = masterRecords.filter(r => {
       const isOpen = (r.status === 'Open' || r.status === 'Open - Pending Action');
-      const matchesStaff = (filterStaff === 'ALL' || r.assignedStaff === filterStaff);
+      const canonical = getCanonicalStaffName(r.assignedStaff);
+      const matchesStaff = (filterStaff === 'ALL' || canonical === filterStaff);
       return isOpen && matchesStaff;
     });
 
@@ -2079,6 +2140,8 @@
     openEnquiries.forEach(d => {
       const timeStr = d.createdDate ? new Date(d.createdDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently';
       const courseBadge = d.course ? `<span style="font-size:12px; font-weight:700; color:var(--primary); background:#e2e8f0; padding:2px 8px; border-radius:6px; margin-left:6px;">${d.course}</span>` : '';
+      const canonicalDesk = getCanonicalStaffName(d.assignedStaff);
+
       container.innerHTML += `
         <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:14px; padding:18px; margin-bottom:14px; box-shadow: 2px 2px 6px rgba(0,0,0,0.03);">
           <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
@@ -2087,7 +2150,7 @@
               ${courseBadge}
               <span style="font-size:12px; background:#e2e8f0; padding:2px 8px; border-radius:6px; margin-left:6px;">${d.type}</span>
               ${d.isRepeatVisitor ? '<span style="font-size:11px; background:#fee2e2; color:var(--crimson); padding:2px 6px; border-radius:6px; font-weight:700;">Repeat Visit</span>' : ''}
-              <div style="font-size:12px; color:var(--subtext); margin-top:2px;">Currently Assigned: <b>${d.assignedStaff || 'Unassigned'}</b> • Logged: ${timeStr}</div>
+              <div style="font-size:12px; color:var(--subtext); margin-top:2px;">Currently Assigned: <b>${canonicalDesk}</b> • Logged: ${timeStr}</div>
             </div>
             <span style="color:var(--crimson); font-weight:700; font-size:12px; background:#fee2e2; padding:3px 8px; border-radius:6px;">Status: ${d.status}</span>
           </div>
@@ -2218,7 +2281,7 @@
     }
   });
 
-  // Real-time Staff List and Program Routing Synchronization
+  // Real-time Staff List and Program/Semester Routing Synchronization
   db.collection('settings').doc('staffList').onSnapshot(doc => {
     currentStaffList = (doc.exists && doc.data().names) ? doc.data().names : ["Person 1", "Person 2", "Person 3", "Person 4", "Person 5"];
     renderStaffChips();
@@ -2244,7 +2307,11 @@
     c.innerHTML = '';
 
     currentStaffList.forEach((name, idx) => {
-      const currentRoute = staffRoutingMap[name] || 'ALL';
+      // Structure: { cohort: 'ALL'|'UG'|'PG'|'FACULTY_ONLY', sem: 'ALL'|'1'|'2'|'3'|'4'|'5+' }
+      const routeObj = (typeof staffRoutingMap[name] === 'object') ? staffRoutingMap[name] : { cohort: staffRoutingMap[name] || 'ALL', sem: 'ALL' };
+      const currentCohort = routeObj.cohort || 'ALL';
+      const currentSem = routeObj.sem || 'ALL';
+
       c.innerHTML += `
         <div class="staff-routing-card">
           <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -2254,25 +2321,40 @@
               <span class="chip-btn" style="color:var(--crimson);" title="Remove" onclick="removeStaff(${idx})">✕</span>
             </div>
           </div>
-          <div style="display:flex; align-items:center; gap:8px; margin-top:2px;">
-            <label style="font-size:11.5px; font-weight:700; color:var(--subtext);">Allowed Cohort:</label>
-            <select class="neu-inset" style="padding:4px 8px; font-size:12px; margin:0;" onchange="updateStaffRouting('${name}', this.value)">
-              <option value="ALL" ${currentRoute === 'ALL' ? 'selected' : ''}>All Programs (Open)</option>
-              <option value="UG" ${currentRoute === 'UG' ? 'selected' : ''}>UG (BCA / BBA / Law)</option>
-              <option value="PG" ${currentRoute === 'PG' ? 'selected' : ''}>PG / MBA Programs</option>
-              <option value="FACULTY_ONLY" ${currentRoute === 'FACULTY_ONLY' ? 'selected' : ''}>Faculty Exclusive Line</option>
-            </select>
+          
+          <div style="display:flex; flex-direction:column; gap:6px; margin-top:2px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <label style="font-size:11px; font-weight:700; color:var(--subtext);">Allowed Program:</label>
+              <select class="neu-inset" style="padding:4px 8px; font-size:11.5px; margin:0; width:160px;" onchange="updateStaffRouting('${name}', this.value, '${currentSem}')">
+                <option value="ALL" ${currentCohort === 'ALL' ? 'selected' : ''}>All Programs (Open)</option>
+                <option value="UG" ${currentCohort === 'UG' ? 'selected' : ''}>UG (BCA / BBA / Law)</option>
+                <option value="PG" ${currentCohort === 'PG' ? 'selected' : ''}>PG / MBA Programs</option>
+                <option value="FACULTY_ONLY" ${currentCohort === 'FACULTY_ONLY' ? 'selected' : ''}>Faculty Exclusive Line</option>
+              </select>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <label style="font-size:11px; font-weight:700; color:var(--subtext);">Allowed Semester:</label>
+              <select class="neu-inset" style="padding:4px 8px; font-size:11.5px; margin:0; width:160px;" onchange="updateStaffRouting('${name}', '${currentCohort}', this.value)">
+                <option value="ALL" ${currentSem === 'ALL' ? 'selected' : ''}>All Semesters (Open)</option>
+                <option value="1" ${currentSem === '1' ? 'selected' : ''}>1st Sem Only</option>
+                <option value="2" ${currentSem === '2' ? 'selected' : ''}>2nd Sem Only</option>
+                <option value="3" ${currentSem === '3' ? 'selected' : ''}>3rd Sem Only</option>
+                <option value="4" ${currentSem === '4' ? 'selected' : ''}>4th Sem Only</option>
+                <option value="5+" ${currentSem === '5+' ? 'selected' : ''}>5th Sem & Higher</option>
+              </select>
+            </div>
           </div>
         </div>
       `;
     });
   }
 
-  function updateStaffRouting(staffName, routingVal) {
-    staffRoutingMap[staffName] = routingVal;
+  function updateStaffRouting(staffName, cohortVal, semVal) {
+    staffRoutingMap[staffName] = { cohort: cohortVal, sem: semVal };
     db.collection('settings').doc('staffRouting').set(staffRoutingMap, { merge: true })
-      .then(() => alert(`Routing for ${staffName} updated to: ${routingVal}`))
-      .catch(err => alert("Error: " + err.message));
+      .then(() => alert(`Updated routing for ${staffName}:\nProgram: ${cohortVal}\nSemester: ${semVal}`))
+      .catch(err => alert("Error saving routing: " + err.message));
   }
 
   function addNewStaff() {
@@ -2283,7 +2365,7 @@
     db.collection('settings').doc('staffList').set({ names: currentStaffList })
       .then(() => {
         document.getElementById('newStaffInput').value = '';
-        updateStaffRouting(val, 'ALL');
+        updateStaffRouting(val, 'ALL', 'ALL');
       });
   }
 
@@ -2295,7 +2377,7 @@
     const trimmed = newName.trim();
     if (currentStaffList.includes(trimmed)) return alert("A profile with this name already exists.");
 
-    const oldRoute = staffRoutingMap[currentName] || 'ALL';
+    const oldRoute = staffRoutingMap[currentName] || { cohort: 'ALL', sem: 'ALL' };
     delete staffRoutingMap[currentName];
     staffRoutingMap[trimmed] = oldRoute;
 
@@ -2757,7 +2839,7 @@
     let csv = "Type,Name,Course,Enrollment/Contact,Section,Semester,Assigned Staff,Transferred From,Query,Solution Remarks,Status,Handling Duration (Mins),Repeat Visitor,Created Date\n";
     masterRecords.forEach(r => {
       const contactOrEnroll = r.enrollment !== 'GUEST' && r.enrollment !== 'FACULTY' ? (r.enrollment || '') : (r.contact || '');
-      csv += `"${r.type || ''}","${r.name || ''}","${r.course || ''}","${contactOrEnroll}","${r.sec || ''}","${r.sem || ''}","${r.assignedStaff || ''}","${r.transferredFrom || ''}","${(r.query || '').replace(/"/g, '""')}","${(r.solution || '').replace(/"/g, '""')}","${r.status || ''}","${r.handlingDurationMinutes || ''}","${r.isRepeatVisitor ? 'YES' : 'NO'}","${r.createdDate || ''}"\n`;
+      csv += `"${r.type || ''}","${r.name || ''}","${r.course || ''}","${contactOrEnroll}","${r.sec || ''}","${r.sem || ''}","${getCanonicalStaffName(r.assignedStaff)}","${r.transferredFrom || ''}","${(r.query || '').replace(/"/g, '""')}","${(r.solution || '').replace(/"/g, '""')}","${r.status || ''}","${r.handlingDurationMinutes || ''}","${r.isRepeatVisitor ? 'YES' : 'NO'}","${r.createdDate || ''}"\n`;
     });
     const blob = new Blob([csv], { type: 'text/csv' });
     const link = document.createElement('a');
