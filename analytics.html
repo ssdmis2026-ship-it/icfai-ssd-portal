@@ -149,7 +149,6 @@
       gap: 6px;
     }
     
-    /* Program & Semester Routing Card */
     .staff-routing-card {
       background: var(--bg);
       padding: 14px 16px;
@@ -235,7 +234,6 @@
       box-shadow: 0 0 0 2px var(--accent);
     }
 
-    /* Word-Processing Editor Toolbar */
     .editor-toolbar {
       display: flex;
       flex-wrap: wrap;
@@ -389,7 +387,7 @@
 
     <input type="password" id="headPasswordInput" class="neu-inset" placeholder="Enter SSD Head Password" style="margin-top:10px;">
     
-    <div style="display:flex; justify-content:space-between; align-items:center; margin:12px 0;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-12px 0;">
       <span id="headAuthErr" style="color:var(--crimson); font-size:13px; display:none;">Invalid credentials</span>
       <a href="javascript:void(0)" onclick="triggerHeadForgotPassword()" style="font-size:12px; color:var(--accent); text-decoration:none; margin-left:auto;">Forgot Password?</a>
     </div>
@@ -398,7 +396,7 @@
   </div>
 </div>
 
-<!-- 4-Month Archival Prompt Modal (Guarded: Only shows after 120 true elapsed days) -->
+<!-- 4-Month Archival Prompt Modal (Only pops when 120 days have genuinely passed) -->
 <div id="headArchiveModal" class="modal-overlay" style="display:none;">
   <div class="neu-card" style="max-width: 550px; width: 100%; text-align: center;">
     <div style="font-size:40px; margin-bottom:10px;">📦</div>
@@ -564,9 +562,8 @@
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
         <div>
           <h3 style="color:var(--primary); margin:0;">Staff Resolution & Handling Speed (TAT) Breakdown</h3>
-          <p style="font-size:13px; color:var(--subtext); margin:3px 0 0 0;">Unified metrics cleanly consolidated under official active profiles (no split duplicate rows).</p>
+          <p style="font-size:13px; color:var(--subtext); margin:3px 0 0 0;">Unified metrics cleanly consolidated under active profiles (all duplicates eliminated).</p>
         </div>
-        <button class="neu-btn" style="color:var(--accent); font-size:12px; padding:6px 14px;" onclick="harmonizeHistoricalStaffNames()">Harmonize Historical Staff Names in Database</button>
       </div>
 
       <div style="overflow-x:auto;">
@@ -1033,7 +1030,7 @@
         <div>
           <h3 style="color:var(--primary); margin:0;">SSD Staff Profile & Program/Semester Allocation Management</h3>
           <p style="font-size:13px; color:var(--subtext); margin:4px 0 0 0;">
-            Assign each staff member specifically to Program Cohorts (UG vs. PG) AND Specific Semesters. The front desk automatically filters selections based on student data.
+            Assign each staff member specifically to Program Cohorts (UG vs. PG) AND Specific Semesters. Edits automatically harmonize the database.
           </p>
         </div>
       </div>
@@ -1489,7 +1486,7 @@
     renderFacultyTable();
   }).catch(() => {});
 
-  // Canonical Staff Normalizer (Merges legacy renamed profiles to active canonical titles)
+  // Robust Canonical Staff Normalizer: Merges any legacy variations into the active profile names
   function getCanonicalStaffName(rawName) {
     if (!rawName || rawName === "No Staff Available") return "No Staff Available";
     const cleaned = rawName.trim();
@@ -1498,7 +1495,6 @@
     const lower = cleaned.toLowerCase();
     for (let c of currentStaffList) {
       const cLower = c.toLowerCase();
-      if (cLower.includes(lower) || lower.includes(cLower)) return c;
       if (lower.includes("sudha") && cLower.includes("sudha")) return c;
       if (lower.includes("chandrakala") && cLower.includes("chandrakala")) return c;
       if (lower.includes("usha") && cLower.includes("usha")) return c;
@@ -1508,29 +1504,38 @@
     return cleaned;
   }
 
-  // Database Cleaner: Harmonizes all legacy ticket strings to the new full names
-  async function harmonizeHistoricalStaffNames() {
-    if (!confirm("This will harmonize and update all older inquiries in the database to use current active profile names. Continue?")) return;
-    
-    let updatedCount = 0;
-    const batch = db.batch();
+  // Automatic Background Cascade Updater: Migrates older inquiries with shortened names directly in Firestore
+  let isCascadeMigrationRunning = false;
+  async function autoCascadeMigrateStaffNames() {
+    if (isCascadeMigrationRunning || !currentStaffList.length || !masterRecords.length) return;
+    isCascadeMigrationRunning = true;
 
-    masterRecords.forEach(r => {
-      const raw = r.assignedStaff;
-      const canonical = getCanonicalStaffName(raw);
-      if (raw && raw !== canonical && r.docId) {
-        batch.update(db.collection('enquiries').doc(r.docId), { assignedStaff: canonical });
-        updatedCount++;
+    try {
+      const toUpdate = [];
+      masterRecords.forEach(r => {
+        const raw = r.assignedStaff;
+        if (raw && raw !== "No Staff Available" && !currentStaffList.includes(raw) && r.docId) {
+          const canonical = getCanonicalStaffName(raw);
+          if (canonical && canonical !== raw) {
+            toUpdate.push({ docId: r.docId, canonicalName: canonical });
+          }
+        }
+      });
+
+      if (toUpdate.length > 0) {
+        const batch = db.batch();
+        // Batch limit is 500
+        toUpdate.slice(0, 450).forEach(item => {
+          batch.update(db.collection('enquiries').doc(item.docId), { assignedStaff: item.canonicalName });
+        });
+        await batch.commit();
+        console.log(`Auto-migrated ${toUpdate.length} legacy inquiries to current canonical names.`);
       }
-    });
-
-    if (updatedCount === 0) {
-      alert("All records in the database are already harmonized with active profile names.");
-      return;
+    } catch (err) {
+      console.warn("Auto-cascade migration notice:", err);
+    } finally {
+      isCascadeMigrationRunning = false;
     }
-
-    await batch.commit();
-    alert(`Successfully harmonized ${updatedCount} historical inquiries to active profile names.`);
   }
 
   db.collection('enquiries').onSnapshot(snapshot => {
@@ -1544,11 +1549,6 @@
     let totalTATMinutes = 0;
     let resolvedWithTATCount = 0;
     let totalOpenWaitMinutes = 0;
-
-    // Staff stats dictionary strictly anchored on current active profiles
-    let staffStats = {};
-    currentStaffList.forEach(name => { staffStats[name] = { assigned: 0, resolved: 0, totalTAT: 0 }; });
-    staffStats["No Staff Available"] = { assigned: 0, resolved: 0, totalTAT: 0 };
 
     let studentWords = {};
     let facultyWords = {};
@@ -1613,19 +1613,6 @@
         heatmapMatrix[cKey].total++;
       }
 
-      // Consolidate legacy names into active canonical profiles
-      const rawStaff = d.assignedStaff || "No Staff Available";
-      const s = getCanonicalStaffName(rawStaff);
-
-      if (!staffStats[s]) staffStats[s] = { assigned: 0, resolved: 0, totalTAT: 0 };
-      staffStats[s].assigned++;
-      if (d.status === 'Resolved') {
-        staffStats[s].resolved++;
-        if (d.handlingDurationMinutes && d.handlingDurationMinutes <= 180) {
-          staffStats[s].totalTAT += d.handlingDurationMinutes;
-        }
-      }
-
       const dateKey = d.createdDate ? d.createdDate.substring(0, 10) : new Date().toISOString().substring(0, 10);
       dailyTimeline[dateKey] = (dailyTimeline[dateKey] || 0) + 1;
 
@@ -1678,13 +1665,67 @@
     }
     document.getElementById('kpiOpenWait').innerText = openWaitDisplay;
 
-    renderStaffTable(staffStats);
+    renderStaffTable();
     renderHeatmapMatrix(heatmapMatrix);
     renderAllCharts(dailyTimeline, students, faculty, general, hourlyTraffic, categoryCounts);
     renderKeywordStream('studentKeywords', studentWords, 'var(--accent)');
     renderKeywordStream('facultyKeywords', facultyWords, 'var(--crimson)');
     renderMasterQueue();
+
+    // Trigger auto background sync
+    autoCascadeMigrateStaffNames();
   });
+
+  // Strict Whitelist Render: ONLY shows current active staff members and "No Staff Available"
+  function renderStaffTable() {
+    const tbody = document.getElementById('staffTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const staffStats = {};
+    currentStaffList.forEach(name => {
+      staffStats[name] = { assigned: 0, resolved: 0, totalTAT: 0, tatCount: 0 };
+    });
+    staffStats["No Staff Available"] = { assigned: 0, resolved: 0, totalTAT: 0, tatCount: 0 };
+
+    // Roll up all inquiries into active canonical profiles
+    masterRecords.forEach(d => {
+      const rawStaff = d.assignedStaff || "No Staff Available";
+      const canonical = getCanonicalStaffName(rawStaff);
+
+      if (staffStats[canonical]) {
+        staffStats[canonical].assigned++;
+        if (d.status === 'Resolved') {
+          staffStats[canonical].resolved++;
+          if (d.handlingDurationMinutes && d.handlingDurationMinutes > 0 && d.handlingDurationMinutes <= 180) {
+            staffStats[canonical].totalTAT += d.handlingDurationMinutes;
+            staffStats[canonical].tatCount++;
+          }
+        }
+      }
+    });
+
+    // Output strictly active configured rows
+    const displayList = ["No Staff Available", ...currentStaffList];
+
+    displayList.forEach(staff => {
+      const s = staffStats[staff] || { assigned: 0, resolved: 0, totalTAT: 0, tatCount: 0 };
+      const pending = s.assigned - s.resolved;
+      const rate = s.assigned ? Math.round((s.resolved / s.assigned) * 100) + '%' : 'N/A';
+      const avgStaffTAT = s.tatCount > 0 ? (s.totalTAT / s.tatCount).toFixed(1) + 'm' : 'N/A';
+      
+      tbody.innerHTML += `
+        <tr style="border-bottom: 1px solid #e2e8f0;">
+          <td style="padding:10px; font-weight:700; color:var(--primary);">${staff}</td>
+          <td style="padding:10px;">${s.assigned}</td>
+          <td style="padding:10px; color:var(--green); font-weight:700;">${s.resolved}</td>
+          <td style="padding:10px; color:${pending > 0 ? 'var(--crimson)' : 'var(--subtext)'}; font-weight:700;">${pending}</td>
+          <td style="padding:10px; color:var(--amber); font-weight:700;">${avgStaffTAT}</td>
+          <td style="padding:10px; font-weight:700;">${rate}</td>
+        </tr>
+      `;
+    });
+  }
 
   function renderHeatmapMatrix(matrix) {
     const tbody = document.getElementById('heatmapMatrixBody');
@@ -2285,6 +2326,7 @@
   db.collection('settings').doc('staffList').onSnapshot(doc => {
     currentStaffList = (doc.exists && doc.data().names) ? doc.data().names : ["Person 1", "Person 2", "Person 3", "Person 4", "Person 5"];
     renderStaffChips();
+    renderStaffTable();
     const filterSel = document.getElementById('filterMasterQueueStaff');
     if (filterSel) {
       const prev = filterSel.value;
@@ -2294,6 +2336,7 @@
       });
       filterSel.value = prev || 'ALL';
     }
+    autoCascadeMigrateStaffNames();
   });
 
   db.collection('settings').doc('staffRouting').onSnapshot(doc => {
@@ -2307,7 +2350,6 @@
     c.innerHTML = '';
 
     currentStaffList.forEach((name, idx) => {
-      // Structure: { cohort: 'ALL'|'UG'|'PG'|'FACULTY_ONLY', sem: 'ALL'|'1'|'2'|'3'|'4'|'5+' }
       const routeObj = (typeof staffRoutingMap[name] === 'object') ? staffRoutingMap[name] : { cohort: staffRoutingMap[name] || 'ALL', sem: 'ALL' };
       const currentCohort = routeObj.cohort || 'ALL';
       const currentSem = routeObj.sem || 'ALL';
@@ -2369,21 +2411,46 @@
       });
   }
 
-  function editStaffName(idx) {
-    const currentName = currentStaffList[idx];
-    const newName = prompt(`Enter updated name for "${currentName}":`, currentName);
-    if (!newName || !newName.trim() || newName.trim() === currentName) return;
+  // Edit Staff Name: Automatically migrates older inquiries to the new name string
+  async function editStaffName(idx) {
+    const oldName = currentStaffList[idx];
+    const newName = prompt(`Enter updated name for "${oldName}":`, oldName);
+    if (!newName || !newName.trim() || newName.trim() === oldName) return;
 
     const trimmed = newName.trim();
     if (currentStaffList.includes(trimmed)) return alert("A profile with this name already exists.");
 
-    const oldRoute = staffRoutingMap[currentName] || { cohort: 'ALL', sem: 'ALL' };
-    delete staffRoutingMap[currentName];
+    const oldRoute = staffRoutingMap[oldName] || { cohort: 'ALL', sem: 'ALL' };
+    delete staffRoutingMap[oldName];
     staffRoutingMap[trimmed] = oldRoute;
 
     currentStaffList[idx] = trimmed;
-    db.collection('settings').doc('staffList').set({ names: currentStaffList });
-    db.collection('settings').doc('staffRouting').set(staffRoutingMap);
+    await db.collection('settings').doc('staffList').set({ names: currentStaffList });
+    await db.collection('settings').doc('staffRouting').set(staffRoutingMap);
+
+    // Auto-migrate credentials
+    try {
+      const credDoc = await db.collection('staffSecurity').doc(oldName).get();
+      if (credDoc.exists) {
+        await db.collection('staffSecurity').doc(trimmed).set(credDoc.data());
+      }
+    } catch(e){}
+
+    // Auto-migrate legacy inquiries in database
+    const batch = db.batch();
+    let updatedInquiries = 0;
+    masterRecords.forEach(r => {
+      if (r.assignedStaff === oldName && r.docId) {
+        batch.update(db.collection('enquiries').doc(r.docId), { assignedStaff: trimmed });
+        updatedInquiries++;
+      }
+    });
+
+    if (updatedInquiries > 0) {
+      await batch.commit();
+    }
+
+    alert(`Profile updated to "${trimmed}". Automatically cascaded and updated ${updatedInquiries} inquiries in the database.`);
   }
 
   function removeStaff(idx) {
@@ -2720,28 +2787,6 @@
     }
     sorted.forEach(([w, count]) => {
       el.innerHTML += `<span class="tag"><b>${w}</b> <span style="color:${highlightColor}; font-weight:700;">${count}</span></span>`;
-    });
-  }
-
-  function renderStaffTable(stats) {
-    const tbody = document.getElementById('staffTableBody');
-    tbody.innerHTML = '';
-    Object.keys(stats).forEach(staff => {
-      const s = stats[staff];
-      const pending = s.assigned - s.resolved;
-      const rate = s.assigned ? Math.round((s.resolved / s.assigned) * 100) + '%' : 'N/A';
-      const avgStaffTAT = s.resolved > 0 && s.totalTAT > 0 ? (s.totalTAT / s.resolved).toFixed(1) + 'm' : 'N/A';
-      
-      tbody.innerHTML += `
-        <tr style="border-bottom: 1px solid #e2e8f0;">
-          <td style="padding:10px; font-weight:600;">${staff}</td>
-          <td style="padding:10px;">${s.assigned}</td>
-          <td style="padding:10px; color:var(--green); font-weight:600;">${s.resolved}</td>
-          <td style="padding:10px; color:var(--crimson); font-weight:600;">${pending}</td>
-          <td style="padding:10px; color:var(--amber); font-weight:700;">${avgStaffTAT}</td>
-          <td style="padding:10px; font-weight:700;">${rate}</td>
-        </tr>
-      `;
     });
   }
 
