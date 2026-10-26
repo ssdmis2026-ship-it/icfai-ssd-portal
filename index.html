@@ -35,6 +35,19 @@
       justify-content: space-between;
       padding: 16px 20px 12px 20px;
     }
+
+    /* Top Edge Cursor Deflector: Prevents Chrome's Top Floating 'X' from triggering */
+    #topHoverShield {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 14px;
+      z-index: 9999999;
+      background: transparent;
+      pointer-events: all;
+    }
+
     .layout-wrapper {
       display: flex;
       justify-content: center;
@@ -316,9 +329,9 @@
       padding: 20px;
     }
     #exitFullscreenOverlay {
-      background: rgba(15, 23, 42, 0.7);
-      backdrop-filter: blur(8px);
-      z-index: 99999;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      z-index: 99999999;
     }
     .gate-box {
       background: var(--bg);
@@ -401,6 +414,9 @@
 </head>
 <body>
 
+<!-- Top Edge Deflector Shield -->
+<div id="topHoverShield"></div>
+
 <!-- 2-Second Animated Confirmation Toast Overlay -->
 <div id="submissionToastOverlay">
   <div class="submission-card" id="submissionToastCard">
@@ -428,7 +444,7 @@
   </div>
 </div>
 
-<!-- Exit Full Screen PIN Authentication Modal (Catches Esc and Top Floating X) -->
+<!-- Exit Full Screen PIN Authentication Modal -->
 <div id="exitFullscreenOverlay" style="display:none;">
   <div class="gate-box">
     <div style="font-size:36px; margin-bottom:8px;">🔒</div>
@@ -630,13 +646,19 @@
   let currentActiveTab = 'student';
   let broadcastState = {};
 
-  // Flag to know whether exit was authorized by staff PIN
   let isAuthorizedFullscreenExit = false;
   let isKioskModeActive = false;
 
-  // Intercept keyboard shortcuts that allow students to inspect or mess with fullscreen
+  // Mouse hover trap: Deflects cursor away from the top 14px to prevent Chrome's floating 'X'
+  const hoverShield = document.getElementById('topHoverShield');
+  hoverShield.addEventListener('mouseenter', function() {
+    if (document.fullscreenElement) {
+      window.scrollBy(0, 1);
+    }
+  });
+
+  // Intercept keyboard shortcuts that allow students to inspect or exit fullscreen
   window.addEventListener('keydown', function(e) {
-    // Intercept Escape key
     if (e.key === 'Escape' || e.keyCode === 27) {
       if (document.fullscreenElement) {
         e.preventDefault();
@@ -645,21 +667,18 @@
         return false;
       }
     }
-    // Block F11, F12, Ctrl+Shift+I, Ctrl+U
     if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j')) || (e.ctrlKey && (e.key === 'U' || e.key === 'u'))) {
       e.preventDefault();
       return false;
     }
   }, true);
 
-  // Native Fullscreen Controller with Escape Lock and Exit Interceptor
   function handleFullscreenAction() {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().then(() => {
         isKioskModeActive = true;
         isAuthorizedFullscreenExit = false;
         updateFullscreenButtonState(true);
-        // Request browser keyboard lock for Escape key if supported
         if (navigator.keyboard && navigator.keyboard.lock) {
           navigator.keyboard.lock(['Escape']).catch(() => {});
         }
@@ -667,7 +686,6 @@
         alert("Fullscreen request denied: " + err.message);
       });
     } else {
-      // Prompt for PIN before allowing exit from Full Screen
       showExitPinModal("Enter Daily Front Desk PIN to exit Full Screen mode:");
     }
   }
@@ -717,7 +735,6 @@
   }
 
   function closeExitFullscreenModal() {
-    // If fullscreen dropped unexpectedly without authorization, don't allow cancelling out into exposed mode!
     if (!document.fullscreenElement && isKioskModeActive && !isAuthorizedFullscreenExit) {
       resumeKioskFullscreen();
     } else {
@@ -737,15 +754,18 @@
     }
   }
 
-  // Detect any exit from Fullscreen (including browser's top 'X' circle or held Escape)
+  // Trap unauthorized exits: Immediately blur and lockout screen behind the security modal
   document.addEventListener('fullscreenchange', () => {
     const isNowFullscreen = !!document.fullscreenElement;
     updateFullscreenButtonState(isNowFullscreen);
 
-    // If user dropped out of fullscreen WITHOUT entering the staff PIN:
     if (!isNowFullscreen && isKioskModeActive && !isAuthorizedFullscreenExit) {
-      // Immediately trap with security lockout overlay so visitor cannot view URLs or un-maximized windows
-      showExitPinModal("Unauthorized exit detected! Enter Daily PIN to unlock desk or click 'Resume Kiosk':");
+      // Re-enter fullscreen immediately if permitted by user gesture, or display security lockout
+      document.documentElement.requestFullscreen().then(() => {
+        isKioskModeActive = true;
+      }).catch(() => {
+        showExitPinModal("Unauthorized exit detected! Enter Daily PIN to unlock desk or click 'Resume Kiosk':");
+      });
     }
   });
 
@@ -902,7 +922,6 @@
     });
   }
 
-  // Program & Semester-Specific Staff Routing Engine
   function repopulateDropdowns() {
     populateSpecificDropdown('facStaff', (staffName) => {
       const routeObj = (typeof staffRoutingMap[staffName] === 'object') ? staffRoutingMap[staffName] : { cohort: staffRoutingMap[staffName] || 'ALL', sem: 'ALL' };
