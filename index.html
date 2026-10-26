@@ -303,7 +303,8 @@
       line-height: 1.4;
     }
 
-    #kioskGateOverlay {
+    /* Kiosk Pin Security Overlays */
+    #kioskGateOverlay, #exitFullscreenOverlay, #submissionToastOverlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
       background: var(--bg);
@@ -313,17 +314,49 @@
       align-items: center;
       padding: 20px;
     }
+    #exitFullscreenOverlay {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(5px);
+      z-index: 99999;
+    }
     .gate-box {
       background: var(--bg);
       border-radius: 24px;
-      box-shadow: 12px 12px 24px var(--shadow-dark), -12px -12px 24px var(--light-shadow);
+      box-shadow: 12px 12px 24px var(--shadow-dark), -12px -12px 24px var(--shadow-light);
       padding: 35px 30px;
       max-width: 420px;
       width: 100%;
       text-align: center;
     }
 
-    /* Tactile Floating Fullscreen Toggle Button */
+    /* Submission Confirmation Toast */
+    #submissionToastOverlay {
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(6px);
+      z-index: 999999;
+      display: none;
+    }
+    .submission-card {
+      background: var(--bg);
+      border-radius: 28px;
+      box-shadow: 14px 14px 28px var(--shadow-dark), -14px -14px 28px var(--shadow-light);
+      padding: 36px 40px;
+      text-align: center;
+      max-width: 500px;
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.75) translateY(15px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    @keyframes fadeOutAnimation {
+      0% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(0.85) translateY(-15px); }
+    }
+
+    /* Fullscreen Button */
     .fullscreen-btn {
       position: fixed;
       bottom: 16px;
@@ -367,6 +400,21 @@
 </head>
 <body>
 
+<!-- 2-Second Animated Confirmation Toast Overlay -->
+<div id="submissionToastOverlay">
+  <div class="submission-card" id="submissionToastCard">
+    <div style="width:68px; height:68px; border-radius:50%; background:#dcfce7; display:flex; align-items:center; justify-content:center; margin: 0 auto 16px auto; box-shadow: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="#16a34a"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+    </div>
+    <h2 id="toastPersonName" style="color:var(--primary); margin:0 0 8px 0; font-size:22px;">Thank you!</h2>
+    <p id="toastMessageBody" style="font-size:15px; font-weight:600; color:#334155; line-height:1.5; margin:0 0 10px 0;">
+      Your enquiry has been registered with your assigned officer.
+    </p>
+    <div style="font-size:12.5px; font-weight:700; color:var(--accent);">SSD Desk Queue Updated</div>
+  </div>
+</div>
+
+<!-- Morning Kiosk Unlock Gate -->
 <div id="kioskGateOverlay" style="display:none;">
   <div class="gate-box">
     <img id="kioskGateLogo" src="logo.png" alt="Logo" style="max-height:54px; max-width:280px; object-fit:contain; margin-bottom:12px;" onerror="this.src='logo.png'">
@@ -376,6 +424,23 @@
     <input type="password" id="kioskPinInput" class="neu-input" placeholder="Enter Daily Access PIN" style="text-align:center; letter-spacing:3px; font-size:16px;">
     <div id="kioskPinError" style="color:var(--crimson); font-size:13px; margin-bottom:12px; display:none;">Incorrect Access PIN. Check with SSD Head.</div>
     <button type="button" class="neu-btn" onclick="validateKioskPin()">Unlock Device</button>
+  </div>
+</div>
+
+<!-- Exit Full Screen PIN Authentication Modal -->
+<div id="exitFullscreenOverlay" style="display:none;">
+  <div class="gate-box">
+    <div style="font-size:32px; margin-bottom:6px;">🔒</div>
+    <h3 style="color:var(--primary); margin:0 0 6px 0;">Security Verification</h3>
+    <p style="font-size:13px; color:#64748b; margin-top:0; margin-bottom:14px;">Enter Daily Front Desk PIN to exit Full Screen mode:</p>
+    
+    <input type="password" id="exitFullscreenPinInput" class="neu-input" placeholder="Enter Daily Access PIN" style="text-align:center; letter-spacing:3px; font-size:16px;">
+    <div id="exitFullscreenError" style="color:var(--crimson); font-size:13px; margin-bottom:12px; display:none;">Incorrect PIN. Access Denied.</div>
+    
+    <div style="display:flex; gap:10px;">
+      <button type="button" class="neu-btn" style="flex:1; color:var(--crimson);" onclick="verifyExitFullscreenPin()">Exit Full Screen</button>
+      <button type="button" class="neu-btn" style="flex:1;" onclick="closeExitFullscreenModal()">Cancel</button>
+    </div>
   </div>
 </div>
 
@@ -534,7 +599,7 @@
 </div>
 
 <!-- Bottom-Right Fullscreen Kiosk Mode Toggle Button -->
-<button class="fullscreen-btn" id="kioskFullscreenBtn" onclick="toggleKioskFullscreen()" title="Toggle Kiosk Fullscreen Mode">
+<button class="fullscreen-btn" id="kioskFullscreenBtn" onclick="handleFullscreenAction()" title="Toggle Kiosk Fullscreen Mode">
   <span id="fullscreenIcon">⛶</span>
   <span id="fullscreenText">Full Screen</span>
 </button>
@@ -564,8 +629,8 @@
   let currentActiveTab = 'student';
   let broadcastState = {};
 
-  // Native Fullscreen Controller
-  function toggleKioskFullscreen() {
+  // Native Fullscreen Controller with PIN Gate on Exit
+  function handleFullscreenAction() {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().then(() => {
         updateFullscreenButtonState(true);
@@ -573,12 +638,31 @@
         alert("Fullscreen request denied: " + err.message);
       });
     } else {
+      // Prompt for PIN before allowing exit from Full Screen
+      document.getElementById('exitFullscreenPinInput').value = '';
+      document.getElementById('exitFullscreenError').style.display = 'none';
+      document.getElementById('exitFullscreenOverlay').style.display = 'flex';
+      document.getElementById('exitFullscreenPinInput').focus();
+    }
+  }
+
+  function verifyExitFullscreenPin() {
+    const input = document.getElementById('exitFullscreenPinInput').value.trim();
+    const errBox = document.getElementById('exitFullscreenError');
+    if (input === masterKioskPin) {
+      document.getElementById('exitFullscreenOverlay').style.display = 'none';
       if (document.exitFullscreen) {
         document.exitFullscreen().then(() => {
           updateFullscreenButtonState(false);
         });
       }
+    } else {
+      errBox.style.display = 'block';
     }
+  }
+
+  function closeExitFullscreenModal() {
+    document.getElementById('exitFullscreenOverlay').style.display = 'none';
   }
 
   function updateFullscreenButtonState(isFullscreen) {
@@ -596,6 +680,26 @@
   document.addEventListener('fullscreenchange', () => {
     updateFullscreenButtonState(!!document.fullscreenElement);
   });
+
+  // 2-Second Animated Confirmation Toast
+  function showSubmissionToast(personName, staffName) {
+    const overlay = document.getElementById('submissionToastOverlay');
+    const card = document.getElementById('submissionToastCard');
+    
+    document.getElementById('toastPersonName').innerText = `Thank you, ${personName}!`;
+    document.getElementById('toastMessageBody').innerText = `Your enquiry has been successfully registered with ${staffName}.`;
+    
+    overlay.style.display = 'flex';
+    card.style.animation = 'popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards';
+
+    setTimeout(() => {
+      card.style.animation = 'fadeOutAnimation 0.35s ease-out forwards';
+      setTimeout(() => {
+        overlay.style.display = 'none';
+        card.style.animation = '';
+      }, 350);
+    }, 2000);
+  }
 
   // Real-time Dynamic Logo Syncer
   db.collection('settings').doc('branding').onSnapshot(doc => {
@@ -1018,7 +1122,7 @@
         startTimestamp: Date.now()
       });
 
-      alert(`Thank you, ${name}. Your enquiry has been registered with ${staff}.`);
+      showSubmissionToast(name, staff);
       document.getElementById('studentForm').reset();
       document.getElementById('stuStatusAlert').style.display = 'none';
       refreshStaffDropdownForCourse();
@@ -1064,7 +1168,7 @@
         startTimestamp: Date.now()
       });
 
-      alert(`Enquiry submitted successfully for ${facName}.`);
+      showSubmissionToast(facName, staff);
       document.getElementById('facultyForm').reset();
       document.getElementById('facStatusAlert').style.display = 'none';
     } catch (err) {
@@ -1106,7 +1210,7 @@
         startTimestamp: Date.now()
       });
 
-      alert(`Thank you, ${genName}. Your enquiry has been registered with ${staff}.`);
+      showSubmissionToast(genName, staff);
       document.getElementById('generalForm').reset();
       document.getElementById('genStatusAlert').style.display = 'none';
     } catch (err) {
