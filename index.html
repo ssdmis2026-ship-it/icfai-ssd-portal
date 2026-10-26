@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" oncontextmenu="return false;">
 <head>
   <meta charset="UTF-8">
   <title>ICFAI SSD - Visitor Desk</title>
@@ -25,6 +25,7 @@
       padding: 0;
       min-height: 100vh;
       overflow-x: hidden;
+      user-select: none;
     }
     body {
       background: var(--bg);
@@ -303,7 +304,7 @@
       line-height: 1.4;
     }
 
-    /* Kiosk Pin Security Overlays */
+    /* Kiosk PIN Security Overlays */
     #kioskGateOverlay, #exitFullscreenOverlay, #submissionToastOverlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -315,8 +316,8 @@
       padding: 20px;
     }
     #exitFullscreenOverlay {
-      background: rgba(15, 23, 42, 0.6);
-      backdrop-filter: blur(5px);
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(8px);
       z-index: 99999;
     }
     .gate-box {
@@ -324,7 +325,7 @@
       border-radius: 24px;
       box-shadow: 12px 12px 24px var(--shadow-dark), -12px -12px 24px var(--shadow-light);
       padding: 35px 30px;
-      max-width: 420px;
+      max-width: 440px;
       width: 100%;
       text-align: center;
     }
@@ -427,19 +428,19 @@
   </div>
 </div>
 
-<!-- Exit Full Screen PIN Authentication Modal -->
+<!-- Exit Full Screen PIN Authentication Modal (Catches Esc and Top Floating X) -->
 <div id="exitFullscreenOverlay" style="display:none;">
   <div class="gate-box">
-    <div style="font-size:32px; margin-bottom:6px;">🔒</div>
-    <h3 style="color:var(--primary); margin:0 0 6px 0;">Security Verification</h3>
-    <p style="font-size:13px; color:#64748b; margin-top:0; margin-bottom:14px;">Enter Daily Front Desk PIN to exit Full Screen mode:</p>
+    <div style="font-size:36px; margin-bottom:8px;">🔒</div>
+    <h3 style="color:var(--primary); margin:0 0 6px 0;">Kiosk Security Lock</h3>
+    <p id="exitFullscreenDesc" style="font-size:13px; color:#64748b; margin-top:0; margin-bottom:14px;">Enter Daily Front Desk PIN to exit Full Screen mode:</p>
     
     <input type="password" id="exitFullscreenPinInput" class="neu-input" placeholder="Enter Daily Access PIN" style="text-align:center; letter-spacing:3px; font-size:16px;">
     <div id="exitFullscreenError" style="color:var(--crimson); font-size:13px; margin-bottom:12px; display:none;">Incorrect PIN. Access Denied.</div>
     
     <div style="display:flex; gap:10px;">
-      <button type="button" class="neu-btn" style="flex:1; color:var(--crimson);" onclick="verifyExitFullscreenPin()">Exit Full Screen</button>
-      <button type="button" class="neu-btn" style="flex:1;" onclick="closeExitFullscreenModal()">Cancel</button>
+      <button type="button" class="neu-btn" style="flex:1; color:var(--crimson);" onclick="verifyExitFullscreenPin()">Authorize Exit</button>
+      <button type="button" class="neu-btn" style="flex:1; color:var(--accent);" id="btnResumeKiosk" onclick="resumeKioskFullscreen()">Resume Kiosk</button>
     </div>
   </div>
 </div>
@@ -629,40 +630,99 @@
   let currentActiveTab = 'student';
   let broadcastState = {};
 
-  // Native Fullscreen Controller with PIN Gate on Exit
+  // Flag to know whether exit was authorized by staff PIN
+  let isAuthorizedFullscreenExit = false;
+  let isKioskModeActive = false;
+
+  // Intercept keyboard shortcuts that allow students to inspect or mess with fullscreen
+  window.addEventListener('keydown', function(e) {
+    // Intercept Escape key
+    if (e.key === 'Escape' || e.keyCode === 27) {
+      if (document.fullscreenElement) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleFullscreenAction();
+        return false;
+      }
+    }
+    // Block F11, F12, Ctrl+Shift+I, Ctrl+U
+    if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j')) || (e.ctrlKey && (e.key === 'U' || e.key === 'u'))) {
+      e.preventDefault();
+      return false;
+    }
+  }, true);
+
+  // Native Fullscreen Controller with Escape Lock and Exit Interceptor
   function handleFullscreenAction() {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().then(() => {
+        isKioskModeActive = true;
+        isAuthorizedFullscreenExit = false;
         updateFullscreenButtonState(true);
+        // Request browser keyboard lock for Escape key if supported
+        if (navigator.keyboard && navigator.keyboard.lock) {
+          navigator.keyboard.lock(['Escape']).catch(() => {});
+        }
       }).catch(err => {
         alert("Fullscreen request denied: " + err.message);
       });
     } else {
       // Prompt for PIN before allowing exit from Full Screen
-      document.getElementById('exitFullscreenPinInput').value = '';
-      document.getElementById('exitFullscreenError').style.display = 'none';
-      document.getElementById('exitFullscreenOverlay').style.display = 'flex';
-      document.getElementById('exitFullscreenPinInput').focus();
+      showExitPinModal("Enter Daily Front Desk PIN to exit Full Screen mode:");
     }
+  }
+
+  function showExitPinModal(descriptionText) {
+    document.getElementById('exitFullscreenDesc').innerText = descriptionText;
+    document.getElementById('exitFullscreenPinInput').value = '';
+    document.getElementById('exitFullscreenError').style.display = 'none';
+    document.getElementById('exitFullscreenOverlay').style.display = 'flex';
+    document.getElementById('exitFullscreenPinInput').focus();
   }
 
   function verifyExitFullscreenPin() {
     const input = document.getElementById('exitFullscreenPinInput').value.trim();
     const errBox = document.getElementById('exitFullscreenError');
     if (input === masterKioskPin) {
+      isAuthorizedFullscreenExit = true;
+      isKioskModeActive = false;
       document.getElementById('exitFullscreenOverlay').style.display = 'none';
-      if (document.exitFullscreen) {
+      if (navigator.keyboard && navigator.keyboard.unlock) {
+        navigator.keyboard.unlock();
+      }
+      if (document.fullscreenElement) {
         document.exitFullscreen().then(() => {
           updateFullscreenButtonState(false);
         });
+      } else {
+        updateFullscreenButtonState(false);
       }
     } else {
       errBox.style.display = 'block';
     }
   }
 
-  function closeExitFullscreenModal() {
+  function resumeKioskFullscreen() {
     document.getElementById('exitFullscreenOverlay').style.display = 'none';
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => {
+        isKioskModeActive = true;
+        isAuthorizedFullscreenExit = false;
+        updateFullscreenButtonState(true);
+        if (navigator.keyboard && navigator.keyboard.lock) {
+          navigator.keyboard.lock(['Escape']).catch(() => {});
+        }
+      }).catch(() => {});
+    }
+  }
+
+  function closeExitFullscreenModal() {
+    // If fullscreen dropped unexpectedly without authorization, don't allow cancelling out into exposed mode!
+    if (!document.fullscreenElement && isKioskModeActive && !isAuthorizedFullscreenExit) {
+      resumeKioskFullscreen();
+    } else {
+      document.getElementById('exitFullscreenOverlay').style.display = 'none';
+    }
   }
 
   function updateFullscreenButtonState(isFullscreen) {
@@ -677,8 +737,16 @@
     }
   }
 
+  // Detect any exit from Fullscreen (including browser's top 'X' circle or held Escape)
   document.addEventListener('fullscreenchange', () => {
-    updateFullscreenButtonState(!!document.fullscreenElement);
+    const isNowFullscreen = !!document.fullscreenElement;
+    updateFullscreenButtonState(isNowFullscreen);
+
+    // If user dropped out of fullscreen WITHOUT entering the staff PIN:
+    if (!isNowFullscreen && isKioskModeActive && !isAuthorizedFullscreenExit) {
+      // Immediately trap with security lockout overlay so visitor cannot view URLs or un-maximized windows
+      showExitPinModal("Unauthorized exit detected! Enter Daily PIN to unlock desk or click 'Resume Kiosk':");
+    }
   });
 
   // 2-Second Animated Confirmation Toast
