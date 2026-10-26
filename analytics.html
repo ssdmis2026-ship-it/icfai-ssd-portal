@@ -383,13 +383,13 @@
   <div class="head-gate-box">
     <img id="headGateLogo" src="logo.png" alt="Logo" style="max-height:54px; max-width:280px; object-fit:contain; margin-bottom:12px;" onerror="this.src='logo.png'">
     <h3 style="color:var(--primary); margin:0 0 6px 0;">Executive Analytics Portal</h3>
-    <p style="font-size:13px; color:#64748b; margin-top:0;">Department Head Authorization Required</p>
+    <p style="font-size:13px; color:#64748b; margin-top:0; margin-bottom:18px;">Department Head Authorization Required</p>
 
-    <input type="password" id="headPasswordInput" class="neu-inset" placeholder="Enter SSD Head Password" style="margin-top:10px;">
+    <input type="password" id="headPasswordInput" class="neu-inset" placeholder="Enter SSD Head Password" style="margin-bottom:10px;">
     
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-12px 0;">
-      <span id="headAuthErr" style="color:var(--crimson); font-size:13px; display:none;">Invalid credentials</span>
-      <a href="javascript:void(0)" onclick="triggerHeadForgotPassword()" style="font-size:12px; color:var(--accent); text-decoration:none; margin-left:auto;">Forgot Password?</a>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; padding: 0 4px;">
+      <span id="headAuthErr" style="color:var(--crimson); font-size:12.5px; font-weight:600; display:none;">Invalid credentials</span>
+      <a href="javascript:void(0)" onclick="triggerHeadForgotPassword()" style="font-size:12px; color:var(--accent); font-weight:600; text-decoration:none; margin-left:auto;">Forgot Password?</a>
     </div>
 
     <button type="button" class="neu-btn" style="width:100%;" onclick="validateHeadLogin()">Access Portal</button>
