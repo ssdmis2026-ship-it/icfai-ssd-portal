@@ -323,6 +323,36 @@
       text-align: center;
     }
 
+    /* Tactile Floating Fullscreen Toggle Button */
+    .fullscreen-btn {
+      position: fixed;
+      bottom: 16px;
+      right: 20px;
+      background: var(--bg);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      border-radius: 12px;
+      padding: 8px 14px;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--primary);
+      box-shadow: 4px 4px 10px var(--shadow-dark), -4px -4px 10px var(--shadow-light);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      z-index: 1000;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    .fullscreen-btn:hover {
+      box-shadow: 6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light);
+      transform: translateY(-2px);
+    }
+    .fullscreen-btn:active {
+      box-shadow: inset 2px 2px 5px var(--shadow-dark), inset -2px -2px 5px var(--shadow-light);
+      transform: translateY(0);
+    }
+
     .subtle-footer {
       width: 100%;
       text-align: center;
@@ -377,7 +407,7 @@
         <button class="tab-btn" id="tabGeneral" type="button" onclick="switchTab('general')">Admission Enquiry / General Enquiry</button>
       </div>
 
-      <!-- 1. Student Form (Filtered dynamically based on Program/Course) -->
+      <!-- 1. Student Form (Filtered dynamically based on Program/Course & Semester) -->
       <form id="studentForm">
         <label style="font-size:12.5px; font-weight:600;">Enrollment Number</label>
         <input type="text" id="stuEnroll" class="neu-input" placeholder="e.g. 26BSOCBL0001" oninput="handleStudentEnrollInput()" required>
@@ -396,7 +426,7 @@
           </div>
           <div>
             <label style="font-size:12.5px; font-weight:600;">Semester</label>
-            <input type="text" id="stuSem" class="neu-input" placeholder="e.g. 1st Sem">
+            <input type="text" id="stuSem" class="neu-input" placeholder="e.g. 1st Sem" oninput="refreshStaffDropdownForCourse()">
           </div>
         </div>
 
@@ -503,6 +533,12 @@
 
 </div>
 
+<!-- Bottom-Right Fullscreen Kiosk Mode Toggle Button -->
+<button class="fullscreen-btn" id="kioskFullscreenBtn" onclick="toggleKioskFullscreen()" title="Toggle Kiosk Fullscreen Mode">
+  <span id="fullscreenIcon">⛶</span>
+  <span id="fullscreenText">Full Screen</span>
+</button>
+
 <div class="subtle-footer">
   Designed by Ayushi Gupta • Developed by Mohith Yadav S
 </div>
@@ -527,6 +563,39 @@
   let staffStatusMap = {};
   let currentActiveTab = 'student';
   let broadcastState = {};
+
+  // Native Fullscreen Controller
+  function toggleKioskFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => {
+        updateFullscreenButtonState(true);
+      }).catch(err => {
+        alert("Fullscreen request denied: " + err.message);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().then(() => {
+          updateFullscreenButtonState(false);
+        });
+      }
+    }
+  }
+
+  function updateFullscreenButtonState(isFullscreen) {
+    const icon = document.getElementById('fullscreenIcon');
+    const text = document.getElementById('fullscreenText');
+    if (isFullscreen) {
+      icon.innerText = '🗗';
+      text.innerText = 'Exit Full Screen';
+    } else {
+      icon.innerText = '⛶';
+      text.innerText = 'Full Screen';
+    }
+  }
+
+  document.addEventListener('fullscreenchange', () => {
+    updateFullscreenButtonState(!!document.fullscreenElement);
+  });
 
   // Real-time Dynamic Logo Syncer
   db.collection('settings').doc('branding').onSnapshot(doc => {
@@ -661,18 +730,15 @@
     });
   }
 
-  // Program-Specific Staff Filter Algorithm
+  // Program & Semester-Specific Staff Routing Engine
   function repopulateDropdowns() {
-    // 1. Populate Faculty Dropdown (Faculty or Open All Desks)
     populateSpecificDropdown('facStaff', (staffName) => {
-      const route = staffRoutingMap[staffName] || 'ALL';
-      return route === 'ALL' || route === 'FACULTY_ONLY';
+      const routeObj = (typeof staffRoutingMap[staffName] === 'object') ? staffRoutingMap[staffName] : { cohort: staffRoutingMap[staffName] || 'ALL', sem: 'ALL' };
+      const cohort = routeObj.cohort || 'ALL';
+      return cohort === 'ALL' || cohort === 'FACULTY_ONLY';
     });
 
-    // 2. Populate Admission / General Dropdown (All Desks)
     populateSpecificDropdown('genStaff', () => true);
-
-    // 3. Populate Student Dropdown (Dynamically Filtered)
     refreshStaffDropdownForCourse();
   }
 
@@ -703,17 +769,36 @@
 
   function refreshStaffDropdownForCourse() {
     const courseVal = (document.getElementById('stuCourse').value || '').trim().toUpperCase();
+    const semVal = (document.getElementById('stuSem').value || '').trim().toLowerCase();
+
     const isUG = courseVal.includes('BCA') || courseVal.includes('BBA') || courseVal.includes('LLB') || courseVal.includes('BA') || courseVal.includes('B.COM') || courseVal.includes('UG');
     const isPG = courseVal.includes('MBA') || courseVal.includes('PG') || courseVal.includes('M.COM') || courseVal.includes('PHD');
 
+    let currentSemNumber = '';
+    if (semVal.includes('1')) currentSemNumber = '1';
+    else if (semVal.includes('2')) currentSemNumber = '2';
+    else if (semVal.includes('3')) currentSemNumber = '3';
+    else if (semVal.includes('4')) currentSemNumber = '4';
+    else if (semVal.includes('5') || semVal.includes('6') || semVal.includes('7') || semVal.includes('8')) currentSemNumber = '5+';
+
     populateSpecificDropdown('stuStaff', (staffName) => {
-      const route = staffRoutingMap[staffName] || 'ALL';
-      if (route === 'ALL') return true;
-      if (route === 'FACULTY_ONLY') return false; // Hide faculty-only lines from students
-      if (isUG && route === 'UG') return true;
-      if (isPG && route === 'PG') return true;
-      if (!isUG && !isPG) return true; // Show all if course not yet specified
-      return false;
+      const routeObj = (typeof staffRoutingMap[staffName] === 'object') ? staffRoutingMap[staffName] : { cohort: staffRoutingMap[staffName] || 'ALL', sem: 'ALL' };
+      const cohort = routeObj.cohort || 'ALL';
+      const sem = routeObj.sem || 'ALL';
+
+      if (cohort === 'FACULTY_ONLY') return false;
+      if (cohort === 'ALL' && sem === 'ALL') return true;
+
+      let cohortMatches = true;
+      if (cohort === 'UG' && !isUG && isPG) cohortMatches = false;
+      if (cohort === 'PG' && !isPG && isUG) cohortMatches = false;
+
+      let semMatches = true;
+      if (currentSemNumber && sem !== 'ALL') {
+        if (sem !== currentSemNumber) semMatches = false;
+      }
+
+      return cohortMatches && semMatches;
     });
 
     checkStaffStatus('stuStaff', 'stuStatusAlert');
@@ -856,7 +941,6 @@
     }
   }
 
-  // Clear inputs immediately when enrollment number is backspaced / emptied
   function handleStudentEnrollInput() {
     const v = document.getElementById('stuEnroll').value.trim().toUpperCase();
     if (!v) {
